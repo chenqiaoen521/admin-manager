@@ -219,6 +219,7 @@ export default {
   .custom-tree-container {
     float: left;
     min-width: 150px;
+    overflow: hidden;
   }
   .custom-tree-node {
     flex: 1;
