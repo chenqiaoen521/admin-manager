@@ -30,9 +30,14 @@
           <span>{{ scope.row.id }}</span>
         </template>
       </el-table-column>
+      <el-table-column :label="$t('table.rolename')" min-width="100px">
+        <template slot-scope="scope">
+          <span>{{ scope.row.pathname }}</span>
+        </template>
+      </el-table-column>
       <el-table-column :label="$t('table.rolename')" min-width="150px">
         <template slot-scope="scope">
-          <span>{{ scope.row.name }}</span>
+          <span>{{ scope.row.path }}</span>
         </template>
       </el-table-column>
       <el-table-column :label="$t('table.createdDate')" width="150px" align="center">
@@ -48,7 +53,7 @@
       <el-table-column :label="$t('table.actions')" align="center" width="330" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">{{ $t('table.edit') }}</el-button>
-          <el-button  size="mini" type="success" @click="permission(scope.row)">{{ $t('table.permission') }}
+          <el-button  size="mini" type="success" @click="handleModifyStatus(scope.row,'published')">{{ $t('table.publish') }}
           </el-button>
           <el-button  size="mini" @click="handleModifyStatus(scope.row,'draft')">{{ $t('table.draft') }}
           </el-button>
@@ -63,10 +68,23 @@
     </div>
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
-      <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
-        <el-form-item :label="$t('table.rolename')" prop="name">
-          <el-input v-model="temp.name"/>
+      <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="90px" style="width: 400px; margin-left:50px;">
+        <el-form-item :label="$t('table.pathname')" prop="pathname">
+          <el-input v-model="temp.pathname"/>
         </el-form-item>
+        <el-form-item :label="$t('table.path')" prop="path">
+          <el-input v-model="temp.path"/>
+        </el-form-item>
+        <!-- <el-form-item :label="$t('table.pathname')">
+          <el-select v-model="temp.parentid" placeholder="请选择父级">
+            <el-option
+              v-for="item in parent"
+              :key="item.id"
+              :label="item.pathname"
+              :value="item.id">
+            </el-option>
+          </el-select>
+        </el-form-item> -->
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible = false">{{ $t('table.cancel') }}</el-button>
@@ -74,23 +92,7 @@
         <el-button v-else type="primary" @click="updateData">{{ $t('table.confirm') }}</el-button>
       </div>
     </el-dialog>
-    
 
-    <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible2">
-      <el-form ref="dataForm2"  :model="temp" label-position="left" label-width="70px" style="margin-left:50px;">
-        <el-form-item label="权限">
-          <el-checkbox-group v-model="temp.groupid">
-            <el-checkbox v-for="item in temp2" :label="wocao(item.id)"  >
-              {{item.pathname}}
-            </el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogFormVisible2 = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" @click="setAuth">{{ $t('table.confirm') }}</el-button>
-      </div>
-    </el-dialog>
     <el-dialog :visible.sync="dialogPvVisible" title="Reading statistics">
       <el-table :data="pvData" border fit highlight-current-row style="width: 100%">
         <el-table-column prop="key" label="Channel"/>
@@ -124,7 +126,7 @@ const calendarTypeKeyValue = calendarTypeOptions.reduce((acc, cur) => {
 }, {})
 
 export default {
-  name: 'role',
+  name: 'oomenu',
   directives: {
     waves
   },
@@ -161,12 +163,11 @@ export default {
       statusOptions: ['published', 'draft', 'deleted'],
       showReviewer: false,
       temp: {
-        name: '',
-        groupid: []
+        path: '',
+        pathname: '',
+        parentid: ''
       },
-      temp2: null,
       dialogFormVisible: false,
-      dialogFormVisible2: false,
       dialogStatus: '',
       textMap: {
         update: 'Edit',
@@ -175,63 +176,19 @@ export default {
       dialogPvVisible: false,
       pvData: [],
       rules: {
-        name: [{ required: true, message: '名称是必填项', trigger: 'blur' }]
+        path: [{ required: true, message: '路径必填', trigger: 'blur' }],
+        pathname: [{ required: true, message: '菜单名称必填', trigger: 'blur' }]
       },
       downloadLoading: false
     }
   },
   created() {
     this.getList()
-    this.getAuth()
   },
   methods: {
-    wocao (r) {
-      return 'wocao_' + r
-    },
-    permission (row) {
-      let data = Object.assign({}, row)
-      if (data.groupid && data.groupid.indexOf(',') !== -1) {
-        data.groupid = data.groupid.split(',').map(item => {
-          return 'wocao_' + item
-        })
-        this.temp = data
-      } else {
-        this.temp = data
-      }
-      console.log(this.temp)
-      this.dialogFormVisible2 = true
-    },
-    setAuth () {
-      const tempData = Object.assign({}, this.temp)
-      tempData['groupid'] = tempData.groupid.join(',').replace(/wocao_/g,'')
-      userApi.updateRole(tempData).then(() => {
-        for (const v of this.list) {
-          if (v.id === this.temp.id) {
-            const index = this.list.indexOf(v)
-            this.list.splice(index, 1, this.temp)
-            break
-          }
-        }
-        this.dialogFormVisible2 = false
-        this.$notify({
-          title: '成功',
-          message: '授权成功',
-          type: 'success',
-          duration: 2000
-        })
-      })
-    },
-    getAuth() {
-      userApi.getAuthList().then(response => {
-        this.temp2 = response.data.data
-        setTimeout(() => {
-          this.listLoading = false
-        }, 1.5 * 100)
-      })
-    },
     getList() {
       this.listLoading = true
-      userApi.getRoleList(this.listQuery).then(response => {
+      userApi.getAuthList(this.listQuery).then(response => {
         this.list = response.data.data
         this.total = response.data.count
         // Just to simulate the time of the request
@@ -281,7 +238,7 @@ export default {
     createData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
-          userApi.addRole(this.temp).then(() => {
+          userApi.addAuth(this.temp).then(() => {
             this.list.unshift(this.temp)
             this.dialogFormVisible = false
             this.$notify({
@@ -307,7 +264,8 @@ export default {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           const tempData = Object.assign({}, this.temp)
-          userApi.updateRole(tempData).then(() => {
+          debugger
+          userApi.updateAuth(tempData).then(() => {
             for (const v of this.list) {
               if (v.id === this.temp.id) {
                 const index = this.list.indexOf(v)

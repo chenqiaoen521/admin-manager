@@ -27,17 +27,27 @@
       style="width: 100%;">
       <el-table-column :label="$t('table.id')" align="center" width="65">
         <template slot-scope="scope">
-          <span>{{ scope.row.id }}</span>
+          <span>{{ scope.row.permissionId }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.rolename')" min-width="100px">
+      <el-table-column label="编码" >
         <template slot-scope="scope">
-          <span>{{ scope.row.pathname }}</span>
+          <span>{{ scope.row.permissionCode }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.rolename')" min-width="150px">
+      <el-table-column label="uri" >
         <template slot-scope="scope">
-          <span>{{ scope.row.path }}</span>
+          <span> {{ scope.row.permissionUri }} </span>
+        </template>
+      </el-table-column>
+      <el-table-column  label="权限名称" >
+        <template slot-scope="scope">
+           <span> {{ scope.row.permissionName }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column  label="分栏id">
+        <template slot-scope="scope">
+           <span> {{ scope.row.columnId }} </span>
         </template>
       </el-table-column>
       <el-table-column :label="$t('table.createdDate')" width="150px" align="center">
@@ -50,13 +60,9 @@
           <span>{{ scope.row.updatedAt | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.actions')" align="center" width="330" class-name="small-padding fixed-width">
+      <el-table-column :label="$t('table.actions')" align="center"  class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">{{ $t('table.edit') }}</el-button>
-          <el-button  size="mini" type="success" @click="handleModifyStatus(scope.row,'published')">{{ $t('table.publish') }}
-          </el-button>
-          <el-button  size="mini" @click="handleModifyStatus(scope.row,'draft')">{{ $t('table.draft') }}
-          </el-button>
           <el-button size="mini" type="danger" @click="handleModifyStatus(scope.row,'deleted')">{{ $t('table.delete') }}
           </el-button>
         </template>
@@ -69,22 +75,18 @@
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="90px" style="width: 400px; margin-left:50px;">
-        <el-form-item :label="$t('table.pathname')" prop="pathname">
-          <el-input v-model="temp.pathname"/>
+        <el-form-item label="权限名称" prop="permissionName">
+          <el-input v-model="temp.permissionName"/>
         </el-form-item>
-        <el-form-item :label="$t('table.path')" prop="path">
-          <el-input v-model="temp.path"/>
+        <el-form-item label="权限编码" prop="permissionCode">
+          <el-input v-model="temp.permissionCode"/>
         </el-form-item>
-        <!-- <el-form-item :label="$t('table.pathname')">
-          <el-select v-model="temp.parentid" placeholder="请选择父级">
-            <el-option
-              v-for="item in parent"
-              :key="item.id"
-              :label="item.pathname"
-              :value="item.id">
-            </el-option>
-          </el-select>
-        </el-form-item> -->
+        <el-form-item label="权限uri" prop="permissionUri">
+          <el-input v-model="temp.permissionUri"/>
+        </el-form-item>
+        <el-form-item label="分栏id" prop="columnId">
+          <el-input v-model="temp.columnId"/>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible = false">{{ $t('table.cancel') }}</el-button>
@@ -93,6 +95,17 @@
       </div>
     </el-dialog>
 
+   <!--  <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible2">
+     <el-form ref="dataForm" :model="temp" label-position="left" label-width="90px" style="width: 400px; margin-left:50px;">
+       <el-radio-group v-model="temp.yd_role_id">
+         <el-radio v-for="item in temp2" :label="item.id">{{item.name}}</el-radio>
+       </el-radio-group>
+   </el-form>
+     <div slot="footer" class="dialog-footer">
+       <el-button @click="dialogFormVisible2 = false">{{ $t('table.cancel') }}</el-button>
+       <el-button type="primary" @click="updateRole">{{ $t('table.confirm') }}</el-button>
+     </div>
+   </el-dialog> -->
     <el-dialog :visible.sync="dialogPvVisible" title="Reading statistics">
       <el-table :data="pvData" border fit highlight-current-row style="width: 100%">
         <el-table-column prop="key" label="Channel"/>
@@ -108,9 +121,9 @@
 
 <script>
 import { fetchList, fetchPv, createArticle, updateArticle } from '@/api/article'
-import * as userApi from '@/api/user'
+import * as permApi from '@/api/perm'
 import waves from '@/directive/waves' // 水波纹指令
-import { parseTime } from '@/utils'
+import { parseTime} from '@/utils'
 
 const calendarTypeOptions = [
   { key: 'CN', display_name: 'China' },
@@ -145,17 +158,19 @@ export default {
   },
   data() {
     return {
+      dialogFormVisible2: false,
       tableKey: 0,
       list: null,
-      total: null,
+      total: null, 
       listLoading: true,
+      temp2: null,
       listQuery: {
         page: 1,
         limit: 20,
         importance: undefined,
         title: undefined,
         type: undefined,
-        sort: '+id'
+        sort: undefined
       },
       importanceOptions: [1, 2, 3],
       calendarTypeOptions,
@@ -163,35 +178,55 @@ export default {
       statusOptions: ['published', 'draft', 'deleted'],
       showReviewer: false,
       temp: {
-        path: '',
-        pathname: '',
-        parentid: ''
+        permissionUri: '',
+        permissionName: '',
+        permissionCode: '',
+        columnId: ''
       },
       dialogFormVisible: false,
       dialogStatus: '',
       textMap: {
-        update: 'Edit',
-        create: 'Create'
+        update: '编辑',
+        create: '创建'
       },
       dialogPvVisible: false,
       pvData: [],
       rules: {
-        path: [{ required: true, message: '路径必填', trigger: 'blur' }],
-        pathname: [{ required: true, message: '菜单名称必填', trigger: 'blur' }]
+        permissionName: [
+          { required: true, message: '权限名称必填', trigger: 'blur' }
+        ],
+        permissionCode: [
+          { required: true, message: '权限编码必填', trigger: 'blur' }
+        ],
+        permissionUri: [
+           { required: true, message: '权限uri必填', trigger: 'blur' }
+        ]/*,
+        columnId: [
+           { required: true, message: '分栏id必填', trigger: 'blur' },
+           { type: 'number', message: 'ID必须为数字值'}
+        ]*/
       },
       downloadLoading: false
     }
   },
   created() {
     this.getList()
+
   },
   methods: {
+    handleuserole (row) {
+      this.dialogFormVisible2 = true
+      this.temp = row
+    },
+    updateStat ({id, status} = res) {
+      userApi.updateStatus({id, status})
+    },
     getList() {
       this.listLoading = true
-      userApi.getAuthList(this.listQuery).then(response => {
-        this.list = response.data.data
-        this.total = response.data.count
-        // Just to simulate the time of the request
+      this.listQuery.offset = this.listQuery.page - 1
+      permApi.getPermList(this.listQuery).then(response => {
+        this.list = response.data.data.row
+        this.total = response.data.data.count
         setTimeout(() => {
           this.listLoading = false
         }, 1.5 * 100)
@@ -210,22 +245,19 @@ export default {
       this.getList()
     },
     handleModifyStatus(row, status) {
-      this.$message({
-        message: '操作成功',
-        type: 'success'
-      })
-      row.status = status
+      if (status === 'deleted') {
+        permApi.delPerm({permissionId: row.permissionId}).then(()=> {
+          this.$message({
+            message: '操作成功',
+            type: 'success'
+          })
+          this.list.splice(this.list.findIndex(item => item.id === row.id), 1)
+          row.status = status
+        })
+      }
     },
     resetTemp() {
-      this.temp = {
-        id: undefined,
-        importance: 1,
-        remark: '',
-        timestamp: new Date(),
-        title: '',
-        status: 'published',
-        type: ''
-      }
+      this.temp = {}
     },
     handleCreate() {
       this.resetTemp()
@@ -238,7 +270,7 @@ export default {
     createData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
-          userApi.addAuth(this.temp).then(() => {
+          permApi.createPerm(this.temp).then(() => {
             this.list.unshift(this.temp)
             this.dialogFormVisible = false
             this.$notify({
@@ -253,7 +285,6 @@ export default {
     },
     handleUpdate(row) {
       this.temp = Object.assign({}, row) // copy obj
-      this.temp.timestamp = new Date(this.temp.timestamp)
       this.dialogStatus = 'update'
       this.dialogFormVisible = true
       this.$nextTick(() => {
@@ -261,11 +292,11 @@ export default {
       })
     },
     updateData() {
+      this.temp.createAt = new Date()
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           const tempData = Object.assign({}, this.temp)
-          debugger
-          userApi.updateAuth(tempData).then(() => {
+          permApi.editPerm(tempData).then(() => {
             for (const v of this.list) {
               if (v.id === this.temp.id) {
                 const index = this.list.indexOf(v)
@@ -274,6 +305,29 @@ export default {
               }
             }
             this.dialogFormVisible = false
+            this.$notify({
+              title: '成功',
+              message: '更新成功',
+              type: 'success',
+              duration: 2000
+            })
+          })
+        }
+      })
+    },
+    updateRole() {
+      this.$refs['dataForm'].validate((valid) => {
+        if (valid) {
+          const tempData = Object.assign({}, this.temp)
+          userApi.updateroleID(tempData).then(() => {
+            for (const v of this.list) {
+              if (v.id === this.temp.id) {
+                const index = this.list.indexOf(v)
+                this.list.splice(index, 1, this.temp)
+                break
+              }
+            }
+            this.dialogFormVisible2 = false
             this.$notify({
               title: '成功',
               message: '更新成功',

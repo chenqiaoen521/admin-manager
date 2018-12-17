@@ -80,7 +80,6 @@ export function updateRole(data) {
   })
 }
 
-
 export function getAuthList(params) {
   return request({
     url: '/api/user/auth/list',
@@ -88,7 +87,6 @@ export function getAuthList(params) {
     params
   })
 }
-
 
 export function addAuth(data) {
   return request({

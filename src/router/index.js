@@ -142,16 +142,47 @@ export const asyncRouterMap = [
     ]
   },
   {
+    path: '/dept',
+    component: Layout,
+    redirect: '/dept/list',
+    alwaysShow: true, // will always show the root menu
+    meta: {
+      title: 'department',
+      icon: 'dept',
+      roles: ['admin', 'editor'] // you can set roles in root nav
+    },
+    children: [
+      {
+        path: 'list',
+        component: () => import('@/views/dept/list'),
+        name: 'deptlist',
+        meta: {
+          title: 'deptlist',
+          roles: ['admin', 'editor'] // or you can only set roles in sub nav
+        }
+      }
+    ]
+  },
+  {
     path: '/user',
     component: Layout,
     redirect: '/user/index',
     alwaysShow: true, // will always show the root menu
     meta: {
       title: 'usermodel',
-      icon: 'people',
+      icon: 'person',
       roles: ['admin', 'editor'] // you can set roles in root nav
     },
     children: [
+    /* {
+        path: 'list',
+        component: () => import('@/views/user/user2'),
+        name: 'userlist',
+        meta: {
+          title: 'userlist',
+          roles: ['admin'] // or you can only set roles in sub nav
+        }
+      },*/
       {
         path: 'list',
         component: () => import('@/views/user/list'),
@@ -161,21 +192,39 @@ export const asyncRouterMap = [
           roles: ['admin'] // or you can only set roles in sub nav
         }
       },
-      {
+       {
         path: 'role',
-        component: () => import('@/views/user/role/index'),
+        component: () => import('@/views/user/role/role2'),
         name: 'rolelist',
         meta: {
           title: 'rolelist',
           roles: ['admin'] // or you can only set roles in sub nav
         }
       },
+      /* {
+        path: 'role',
+        component: () => import('@/views/user/role'),
+        name: 'rolelist',
+        meta: {
+          title: 'rolelist',
+          roles: ['admin'] // or you can only set roles in sub nav
+        }
+      },*/
       {
         path: 'auth',
-        component: () => import('@/views/user/auth/index'),
+        component: () => import('@/views/user/auth'),
         name: 'authlist',
         meta: {
           title: 'authlist',
+          roles: ['admin'] // or you can only set roles in sub nav
+        }
+      },
+      {
+        path: 'menu',
+        component: () => import('@/views/user/menu/index'),
+        name: 'menulist',
+        meta: {
+          title: 'menulist',
           roles: ['admin'] // or you can only set roles in sub nav
         }
       }

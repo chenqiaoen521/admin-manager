@@ -13,6 +13,10 @@ module.exports = {
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true
+      },
+      '/upmsManage': {
+        target: 'http://192.168.3.97:8086',
+        changeOrigin: true
       }
     },
 
@@ -40,7 +44,7 @@ module.exports = {
      */
 
     // https://webpack.js.org/configuration/devtool/#development
-    devtool: 'cheap-source-map',
+    devtool: 'eval-source-map',
 
     // CSS Sourcemaps off by default because relative paths are "buggy"
     // with this option, according to the CSS-Loader README

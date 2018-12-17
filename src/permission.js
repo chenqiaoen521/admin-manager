@@ -9,12 +9,12 @@ NProgress.configure({ showSpinner: false })// NProgress Configuration
 
 // permission judge function
 function hasPermission(roles, permissionRoles) {
-  if (permissionRoles.path.indexOf('401') >=0) return true
-  //if (roles.indexOf('admin') >= 0) return true // admin permission passed directly
-  if (!permissionRoles) return true
-  //return roles.some(role => permissionRoles.indexOf(role) >= 0)
-  let result = roles.some(role => {
-    return role.path === permissionRoles.path
+  if (permissionRoles.path.indexOf('401') >= 0) return true
+  // if (roles.indexOf('admin') >= 0) return true // admin permission passed directly
+  if (!permissionRoles) return false
+  // return roles.some(role => permissionRoles.indexOf(role) >= 0)
+  const result = roles.some(role => {
+    return permissionRoles.path === role.permission_uri
   })
   return result
 }

@@ -20,10 +20,10 @@ export function timeAgo(time) {
 }
 
 export function parseStatus(val) {
-  if (val) {
-    return '正常'
+  if (val === 1) {
+    return '不锁定'
   } else {
-    return '禁用'
+    return '锁定'
   }
 }
 

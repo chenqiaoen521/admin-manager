@@ -16,7 +16,6 @@
       <el-button v-waves :loading="downloadLoading" class="filter-item" type="primary" icon="el-icon-download" @click="handleDownload">{{ $t('table.export') }}</el-button>
       <el-checkbox v-model="showReviewer" class="filter-item" style="margin-left:15px;" @change="tableKey=tableKey+1">{{ $t('table.reviewer') }}</el-checkbox>
     </div>
-
     <el-table
       v-loading="listLoading"
       :key="tableKey"
@@ -27,12 +26,22 @@
       style="width: 100%;">
       <el-table-column :label="$t('table.id')" align="center" width="65">
         <template slot-scope="scope">
-          <span>{{ scope.row.id }}</span>
+          <span>{{ scope.row.roleId }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.rolename')" min-width="150px">
+      <el-table-column label="角色名称" min-width="150px">
         <template slot-scope="scope">
-          <span>{{ scope.row.name }}</span>
+          <span>{{ scope.row.roleName }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="角色编码" min-width="150px">
+        <template slot-scope="scope">
+          <span>{{ scope.row.roleCode }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="备注" min-width="150px">
+        <template slot-scope="scope">
+          <span>{{ scope.row.memo }}</span>
         </template>
       </el-table-column>
       <el-table-column :label="$t('table.createdDate')" width="150px" align="center">
@@ -45,13 +54,12 @@
           <span>{{ scope.row.updatedAt | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.actions')" align="center" width="330" class-name="small-padding fixed-width">
+      <el-table-column :label="$t('table.actions')" align="center" width="300" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">{{ $t('table.edit') }}</el-button>
-          <el-button  size="mini" type="success" @click="permission(scope.row)">{{ $t('table.permission') }}
+          <el-button  size="mini" type="success" @click="permission(scope.row, false)">{{ $t('table.permission') }}
           </el-button>
-          <el-button  size="mini" @click="handleModifyStatus(scope.row,'draft')">{{ $t('table.draft') }}
-          </el-button>
+          <el-button size="mini" type="danger" @click="permission(scope.row, true)">取消</el-button>
           <el-button size="mini" type="danger" @click="handleModifyStatus(scope.row,'deleted')">{{ $t('table.delete') }}
           </el-button>
         </template>
@@ -63,9 +71,15 @@
     </div>
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
-      <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
-        <el-form-item :label="$t('table.rolename')" prop="name">
-          <el-input v-model="temp.name"/>
+      <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="100px" style="width: 400px; margin-left:50px;">
+        <el-form-item label="角色名称" prop="roleName">
+          <el-input v-model="temp.roleName"/>
+        </el-form-item>
+        <el-form-item label="角色编码" prop="roleCode">
+          <el-input v-model="temp.roleCode"/>
+        </el-form-item>
+        <el-form-item label="备    注" prop="roleCode">
+          <el-input v-model="temp.memo"/>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -74,21 +88,19 @@
         <el-button v-else type="primary" @click="updateData">{{ $t('table.confirm') }}</el-button>
       </div>
     </el-dialog>
-    
-
-    <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible2">
-      <el-form ref="dataForm2"  :model="temp" label-position="left" label-width="70px" style="margin-left:50px;">
+    <el-dialog :visible.sync="dialogFormVisible2">
+      <el-form label-position="left" label-width="70px" style=" margin-left:50px;">
         <el-form-item label="权限">
-          <el-checkbox-group v-model="temp.groupid">
-            <el-checkbox v-for="item in temp2" :label="wocao(item.id)"  >
-              {{item.pathname}}
-            </el-checkbox>
+          <el-checkbox-group v-model="auth.checkboxes">
+            <el-checkbox v-if="!isupdate" v-for="item in temp2" :label="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+            <el-checkbox v-if="isupdate" v-for="item in ownerPerm" :label="item.permissionId"  >{{item.permissionName}}</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible2 = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" @click="setAuth">{{ $t('table.confirm') }}</el-button>
+        <el-button v-if="!isupdate" type="primary" @click="setAuth">{{ $t('table.confirm') }}</el-button>
+        <el-button v-if="isupdate" type="danger" @click="setAuthCancel">取消權限</el-button>
       </div>
     </el-dialog>
     <el-dialog :visible.sync="dialogPvVisible" title="Reading statistics">
@@ -106,9 +118,11 @@
 
 <script>
 import { fetchList, fetchPv, createArticle, updateArticle } from '@/api/article'
-import * as userApi from '@/api/user'
+import * as userApi from '@/api/user2'
+import * as permApi from '@/api/perm'
 import waves from '@/directive/waves' // 水波纹指令
 import { parseTime } from '@/utils'
+const Qs = require('qs')
 
 const calendarTypeOptions = [
   { key: 'CN', display_name: 'China' },
@@ -124,7 +138,7 @@ const calendarTypeKeyValue = calendarTypeOptions.reduce((acc, cur) => {
 }, {})
 
 export default {
-  name: 'role',
+  name: 'ComplexTable',
   directives: {
     waves
   },
@@ -146,6 +160,11 @@ export default {
       tableKey: 0,
       list: null,
       total: null,
+      auth: {
+        checkboxes: [],
+        roleId: -1,
+        prePerm: []
+      },
       listLoading: true,
       listQuery: {
         page: 1,
@@ -153,29 +172,33 @@ export default {
         importance: undefined,
         title: undefined,
         type: undefined,
-        sort: '+id'
+        sort: undefined
       },
+      ownerPerm: [],
+      isupdate: false,
       importanceOptions: [1, 2, 3],
       calendarTypeOptions,
       sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
       statusOptions: ['published', 'draft', 'deleted'],
       showReviewer: false,
       temp: {
-        name: '',
-        groupid: []
+        roleName: '',
+        roleCode: ''
       },
       temp2: null,
       dialogFormVisible: false,
       dialogFormVisible2: false,
       dialogStatus: '',
       textMap: {
-        update: 'Edit',
-        create: 'Create'
+        update: '编辑',
+        create: '添加'
       },
       dialogPvVisible: false,
       pvData: [],
       rules: {
-        name: [{ required: true, message: '名称是必填项', trigger: 'blur' }]
+        roleName: [{ required: true, message: '名称是必填项', trigger: 'blur' }],
+        roleCode: [{ required: true, message: '编码是必填项', trigger: 'blur' }],
+        memo: [{ required: true, message: '备注是必填项', trigger: 'blur' }],
       },
       downloadLoading: false
     }
@@ -188,42 +211,105 @@ export default {
     wocao (r) {
       return 'wocao_' + r
     },
-    permission (row) {
+    permission (row, flag) {
       let data = Object.assign({}, row)
-      if (data.groupid && data.groupid.indexOf(',') !== -1) {
-        data.groupid = data.groupid.split(',').map(item => {
-          return 'wocao_' + item
-        })
-        this.temp = data
-      } else {
-        this.temp = data
-      }
-      console.log(this.temp)
-      this.dialogFormVisible2 = true
+      this.ownerPerm.length = 0
+      userApi.getPermByRole({roleId: data.roleId}).then(res=> {
+        for (let item of res.data.row) {
+          this.auth.checkboxes.push(item.permission_id)
+          this.ownerPerm.push({permissionId: item.permission_id, permissionName: item.permission_name})
+        }
+        this.auth.roleId = data.roleId
+        this.auth.prePerm = this.auth.checkboxes
+        this.dialogFormVisible2 = true
+        this.isupdate = flag
+      })
     },
     setAuth () {
-      const tempData = Object.assign({}, this.temp)
-      tempData['groupid'] = tempData.groupid.join(',').replace(/wocao_/g,'')
-      userApi.updateRole(tempData).then(() => {
-        for (const v of this.list) {
-          if (v.id === this.temp.id) {
-            const index = this.list.indexOf(v)
-            this.list.splice(index, 1, this.temp)
-            break
+      userApi.addPerm({
+        ids: this.auth.checkboxes,
+        roleId: this.auth.roleId
+      },function(params) {
+         return Qs.stringify({ids: params.ids,roleId: params.roleId}, {arrayFormat: 'repeat'})
+      }).then((res) => { 
+        if (res.data.success) {
+          this.auth = {
+            checkboxes: [],
+            roleId: -1,
+            prePerm: []
           }
+          this.$notify({
+            title: '成功',
+            message: '授权成功',
+            type: 'success',
+            duration: 2000
+          })
+        } else {
+          this.$notify({
+            title: '失敗',
+            message: '授权失敗',
+            type: 'error',
+            duration: 2000
+          })
         }
-        this.dialogFormVisible2 = false
+        this.dialogFormVisible2 = false 
+      },()=>{
         this.$notify({
-          title: '成功',
-          message: '授权成功',
-          type: 'success',
+          title: '失敗',
+          message: '授权失敗',
+          type: 'error',
           duration: 2000
         })
+        this.dialogFormVisible2 = false 
+      })
+    },
+    setAuthCancel () {
+      let arr = [];
+      for (let item of this.auth.prePerm) {
+        if (!this.auth.checkboxes.includes(item)) {
+          arr.push(item)
+        }
+      }
+      userApi.delPermByRole({
+        ids: arr,
+        roleId: this.auth.roleId
+      },function(params) {
+         return Qs.stringify({ids: params.ids,roleId: params.roleId}, {arrayFormat: 'repeat'})
+      }).then((res) => { 
+        if (res.data.success) {
+          this.auth = {
+            checkboxes: [],
+            roleId: -1,
+            prePerm: []
+          }
+          this.$notify({
+            title: '成功',
+            message: '取消成功',
+            type: 'success',
+            duration: 2000
+          })
+        } else {
+          this.$notify({
+            title: '失敗',
+            message: '取消失敗',
+            type: 'error',
+            duration: 2000
+          })
+        }
+        this.dialogFormVisible2 = false 
+      },()=>{
+        this.$notify({
+          title: '失敗',
+          message: '取消失敗',
+          type: 'error',
+          duration: 2000
+        })
+        this.dialogFormVisible2 = false 
       })
     },
     getAuth() {
-      userApi.getAuthList().then(response => {
-        this.temp2 = response.data.data
+      permApi.getPermList().then(response => {
+        this.temp2 = response.data.data.row
         setTimeout(() => {
           this.listLoading = false
         }, 1.5 * 100)
@@ -231,9 +317,10 @@ export default {
     },
     getList() {
       this.listLoading = true
+      this.listQuery.offset = this.listQuery.page - 1
       userApi.getRoleList(this.listQuery).then(response => {
-        this.list = response.data.data
-        this.total = response.data.count
+        this.list = response.data.data.rows
+        this.total = response.data.data.total
         // Just to simulate the time of the request
         setTimeout(() => {
           this.listLoading = false
@@ -253,21 +340,33 @@ export default {
       this.getList()
     },
     handleModifyStatus(row, status) {
-      this.$message({
-        message: '操作成功',
-        type: 'success'
+      this.$confirm('是否要删除，是否继续？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        if (status === 'deleted') {
+          userApi.delRole({roleId: row.roleId}).then(()=> {
+            this.$message({
+              message: '操作成功',
+              type: 'success'
+            })
+            this.list.splice(this.list.findIndex(item => item.roleId === row.roleId), 1)
+            row.status = status
+          })
+        }
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
       })
-      row.status = status
     },
     resetTemp() {
       this.temp = {
-        id: undefined,
-        importance: 1,
-        remark: '',
-        timestamp: new Date(),
-        title: '',
-        status: 'published',
-        type: ''
+        roleCode: '',
+        roleName: '',
+        memo: ''
       }
     },
     handleCreate() {
@@ -295,8 +394,7 @@ export default {
       })
     },
     handleUpdate(row) {
-      this.temp = Object.assign({}, row) // copy obj
-      this.temp.timestamp = new Date(this.temp.timestamp)
+      this.temp = Object.assign({}, row)
       this.dialogStatus = 'update'
       this.dialogFormVisible = true
       this.$nextTick(() => {

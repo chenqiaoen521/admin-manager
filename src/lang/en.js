@@ -4,6 +4,8 @@ export default {
     introduction: 'Introduction',
     documentation: 'Documentation',
     guide: 'Guide',
+    department: 'department',
+    usermodel: 'usermodel',
     permission: 'Permission',
     pagePermission: 'Page Permission',
     directivePermission: 'Directive Permission',
