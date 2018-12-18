@@ -57,7 +57,7 @@
       <el-table-column :label="$t('table.actions')" align="center" width="300" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">{{ $t('table.edit') }}</el-button>
-          <el-button  size="mini" type="success" @click="permission(scope.row, false)">{{ $t('table.permission') }}
+          <el-button style="padding:7px 6px;"  size="mini" type="success" @click="permission(scope.row, false)">查看權限
           </el-button>
           <el-button size="mini" type="danger" @click="permission(scope.row, true)">取消</el-button>
           <el-button size="mini" type="danger" @click="handleModifyStatus(scope.row,'deleted')">{{ $t('table.delete') }}
@@ -214,6 +214,7 @@ export default {
     permission (row, flag) {
       let data = Object.assign({}, row)
       this.ownerPerm.length = 0
+      this.auth.checkboxes.length = 0
       userApi.getPermByRole({roleId: data.roleId}).then(res=> {
         for (let item of res.data.row) {
           this.auth.checkboxes.push(item.permission_id)

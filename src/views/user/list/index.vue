@@ -78,9 +78,9 @@
             inactive-color="#ff4949">
           </el-switch>&nbsp;&nbsp;&nbsp;
           <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">{{ $t('table.edit') }}</el-button>
-          <el-button  size="mini" type="success"  style="width: 66px;" @click="handleuserole(scope.row, false)">查看角色
+          <el-button  size="mini" type="success"   style="padding:7px 6px;"  @click="handleuserole(scope.row, false)">查看角色
           </el-button>
-          <el-button size="mini" type="danger" style="width: 66px;" @click="handleuserole(scope.row, true)">取消角色
+          <el-button size="mini" type="danger"  style="padding:7px 6px;"  @click="handleuserole(scope.row, true)">取消角色
           </el-button>
           <el-button size="mini" type="danger" @click="handleModifyStatus(scope.row,'deleted')">{{ $t('table.delete') }}
           </el-button>
