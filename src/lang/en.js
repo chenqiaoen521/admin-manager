@@ -11,6 +11,8 @@ export default {
     directivePermission: 'Directive Permission',
     icons: 'Icons',
     components: 'Components',
+    device: 'device',
+    deviceManage: 'deviceManage',
     componentIndex: 'Introduction',
     tinymce: 'Tinymce',
     markdown: 'Markdown',

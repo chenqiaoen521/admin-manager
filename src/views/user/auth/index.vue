@@ -1,22 +1,15 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-input :placeholder="$t('table.title')" v-model="listQuery.title" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"/>
-      <el-select v-model="listQuery.importance" :placeholder="$t('table.importance')" clearable style="width: 90px" class="filter-item">
-        <el-option v-for="item in importanceOptions" :key="item" :label="item" :value="item"/>
-      </el-select>
-      <el-select v-model="listQuery.type" :placeholder="$t('table.type')" clearable class="filter-item" style="width: 130px">
-        <el-option v-for="item in calendarTypeOptions" :key="item.key" :label="item.display_name+'('+item.key+')'" :value="item.key"/>
-      </el-select>
-      <el-select v-model="listQuery.sort" style="width: 140px" class="filter-item" @change="handleFilter">
-        <el-option v-for="item in sortOptions" :key="item.key" :label="item.label" :value="item.key"/>
+      <el-input :placeholder="$t('table.title')" v-model="listQuery.keyword" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"/>
+
+      <el-select v-model="listQuery.columnId" style="width: 160px" class="filter-item" @change="handleFilter">
+        <el-option v-for="item in typeCol" :key="item.id" :label="item.label" :value="item.id"/>
       </el-select>
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">{{ $t('table.search') }}</el-button>
       <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit" @click="handleCreate">{{ $t('table.add') }}</el-button>
       <el-button v-waves :loading="downloadLoading" class="filter-item" type="primary" icon="el-icon-download" @click="handleDownload">{{ $t('table.export') }}</el-button>
-      <el-checkbox v-model="showReviewer" class="filter-item" style="margin-left:15px;" @change="tableKey=tableKey+1">{{ $t('table.reviewer') }}</el-checkbox>
     </div>
-
     <el-table
       v-loading="listLoading"
       :key="tableKey"
@@ -25,10 +18,7 @@
       fit
       highlight-current-row
       style="width: 100%;">
-      <el-table-column :label="$t('table.id')" align="center" width="65">
-        <template slot-scope="scope">
-          <span>{{ scope.row.permissionId }}</span>
-        </template>
+      <el-table-column :label="$t('table.id')" type="index" align="center" width="65">
       </el-table-column>
       <el-table-column label="编码" >
         <template slot-scope="scope">
@@ -45,19 +35,19 @@
            <span> {{ scope.row.permissionName }}</span>
         </template>
       </el-table-column>
-      <el-table-column  label="分栏id">
+      <el-table-column  label="权限类型">
         <template slot-scope="scope">
-           <span> {{ scope.row.columnId }} </span>
+           <span> {{ scope.row.columnId | colFilter}} </span>
         </template>
       </el-table-column>
       <el-table-column :label="$t('table.createdDate')" width="150px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.createdAt | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
+          <span>{{ scope.row.createTime | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <el-table-column :label="$t('table.updatedDate')" width="150px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.updatedAt | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
+          <span>{{ scope.row.updateTime | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <el-table-column :label="$t('table.actions')" align="center"  class-name="small-padding fixed-width">
@@ -84,8 +74,13 @@
         <el-form-item label="权限uri" prop="permissionUri">
           <el-input v-model="temp.permissionUri"/>
         </el-form-item>
-        <el-form-item label="分栏id" prop="columnId">
-          <el-input v-model="temp.columnId"/>
+        <el-form-item label="权限类型" prop="columnId">
+          <el-select v-model="temp.columnId" placeholder="请选择权限类型">
+            <el-option label="客户端功能权限" :value="1"></el-option>
+            <el-option label="客户端菜单权限" :value="2"></el-option>
+            <el-option label="管理端功能权限" :value="3"></el-option>
+            <el-option label="管理端菜单权限" :value="4"></el-option>
+          </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -94,18 +89,6 @@
         <el-button v-else type="primary" @click="updateData">{{ $t('table.confirm') }}</el-button>
       </div>
     </el-dialog>
-
-   <!--  <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible2">
-     <el-form ref="dataForm" :model="temp" label-position="left" label-width="90px" style="width: 400px; margin-left:50px;">
-       <el-radio-group v-model="temp.yd_role_id">
-         <el-radio v-for="item in temp2" :label="item.id">{{item.name}}</el-radio>
-       </el-radio-group>
-   </el-form>
-     <div slot="footer" class="dialog-footer">
-       <el-button @click="dialogFormVisible2 = false">{{ $t('table.cancel') }}</el-button>
-       <el-button type="primary" @click="updateRole">{{ $t('table.confirm') }}</el-button>
-     </div>
-   </el-dialog> -->
     <el-dialog :visible.sync="dialogPvVisible" title="Reading statistics">
       <el-table :data="pvData" border fit highlight-current-row style="width: 100%">
         <el-table-column prop="key" label="Channel"/>
@@ -125,18 +108,7 @@ import * as permApi from '@/api/perm'
 import waves from '@/directive/waves' // 水波纹指令
 import { parseTime} from '@/utils'
 
-const calendarTypeOptions = [
-  { key: 'CN', display_name: 'China' },
-  { key: 'US', display_name: 'USA' },
-  { key: 'JP', display_name: 'Japan' },
-  { key: 'EU', display_name: 'Eurozone' }
-]
 
-// arr to obj ,such as { CN : "China", US : "USA" }
-const calendarTypeKeyValue = calendarTypeOptions.reduce((acc, cur) => {
-  acc[cur.key] = cur.display_name
-  return acc
-}, {})
 
 export default {
   name: 'ComplexTable',
@@ -154,26 +126,42 @@ export default {
     },
     typeFilter(type) {
       return calendarTypeKeyValue[type]
+    },
+    colFilter(val) {
+      switch (val) {
+        case 1:
+          return '客户端功能权限'
+          break;
+        case 2:
+           return '客户端菜单权限'
+          break;
+        case 3:
+           return '管理端功能权限'
+          break;
+        case 4:
+           return '管理端菜单权限'
+      }
     }
   },
   data() {
     return {
       dialogFormVisible2: false,
       tableKey: 0,
+      typeCol: [
+        {label: '客户端功能权限', id: 1},
+        {label: '客户端菜单权限', id: 2},
+        {label: '管理端功能权限', id: 3},
+        {label: '管理端菜单权限', id: 4}
+      ],
       list: null,
       total: null, 
       listLoading: true,
       temp2: null,
       listQuery: {
         page: 1,
-        limit: 20,
-        importance: undefined,
-        title: undefined,
-        type: undefined,
-        sort: undefined
+        limit: 10,
+        keyword: undefined
       },
-      importanceOptions: [1, 2, 3],
-      calendarTypeOptions,
       sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
       statusOptions: ['published', 'draft', 'deleted'],
       showReviewer: false,
@@ -200,11 +188,10 @@ export default {
         ],
         permissionUri: [
            { required: true, message: '权限uri必填', trigger: 'blur' }
-        ]/*,
+        ],
         columnId: [
-           { required: true, message: '分栏id必填', trigger: 'blur' },
-           { type: 'number', message: 'ID必须为数字值'}
-        ]*/
+           {required: true, message: '分栏id必填', trigger: 'blur' }
+        ]
       },
       downloadLoading: false
     }
@@ -225,8 +212,8 @@ export default {
       this.listLoading = true
       this.listQuery.offset = this.listQuery.page - 1
       permApi.getPermList(this.listQuery).then(response => {
-        this.list = response.data.data.row
-        this.total = response.data.data.count
+        this.list = response.data.data.rows
+        this.total = response.data.data.total
         setTimeout(() => {
           this.listLoading = false
         }, 1.5 * 100)
@@ -246,12 +233,13 @@ export default {
     },
     handleModifyStatus(row, status) {
       if (status === 'deleted') {
-        permApi.delPerm({permissionId: row.permissionId}).then(()=> {
+        permApi.delPerm({ids: row.permissionId}).then((res)=> {
           this.$message({
-            message: '操作成功',
-            type: 'success'
+            title: '提示',
+            message: res.data.message,
+            type: (res.data.success ? 'success' : 'error')
           })
-          this.list.splice(this.list.findIndex(item => item.id === row.id), 1)
+          this.list.splice(this.list.findIndex(item => item.permissionId === row.permissionId), 1)
           row.status = status
         })
       }
@@ -270,13 +258,13 @@ export default {
     createData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
-          permApi.createPerm(this.temp).then(() => {
+          permApi.createPerm(this.temp).then((res) => {
             this.list.unshift(this.temp)
             this.dialogFormVisible = false
             this.$notify({
-              title: '成功',
-              message: '创建成功',
-              type: 'success',
+              title: '提示',
+              message: res.data.message,
+              type: res.data.success ? 'success' : 'error',
               duration: 2000
             })
           })
@@ -357,8 +345,8 @@ export default {
     handleDownload() {
       this.downloadLoading = true
       import('@/vendor/Export2Excel').then(excel => {
-        const tHeader = ['timestamp', 'title', 'type', 'importance', 'status']
-        const filterVal = ['timestamp', 'title', 'type', 'importance', 'status']
+        const tHeader = ['编码', 'uri', '权限名称', '权限类型']
+        const filterVal = ['permissionCode', 'permissionUri', 'permissionName', 'columnId']
         const data = this.formatJson(filterVal, this.list)
         excel.export_json_to_excel({
           header: tHeader,
@@ -370,8 +358,20 @@ export default {
     },
     formatJson(filterVal, jsonData) {
       return jsonData.map(v => filterVal.map(j => {
-        if (j === 'timestamp') {
-          return parseTime(v[j])
+        if (j === 'columnId') {
+          let data = v[j]
+          switch (data) {
+            case 1:
+              return '客户端功能权限'
+            case 2:
+              return '客户端菜单权限'
+              
+            case 3:
+              return '管理端功能权限'
+              
+            case 4:
+              return '管理端菜单权限'
+          }
         } else {
           return v[j]
         }

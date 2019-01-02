@@ -520,12 +520,12 @@ export default {
         type: 'warning'
       }).then(() => {
         if (status === 'deleted') {
-          userApi.delUser({id: row.id}).then(()=> {
+          userApi.delUser({ids: row.userId}).then(()=> {
             this.$message({
               message: '操作成功',
               type: 'success'
             })
-            this.datatable.splice(this.datatable.findIndex(item => item.id === row.id), 1)
+            this.datatable.splice(this.datatable.findIndex(item => item.userId === row.userId), 1)
             row.status = status
           })
         }

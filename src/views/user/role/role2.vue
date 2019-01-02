@@ -1,20 +1,10 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-input :placeholder="$t('table.title')" v-model="listQuery.title" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"/>
-      <el-select v-model="listQuery.importance" :placeholder="$t('table.importance')" clearable style="width: 90px" class="filter-item">
-        <el-option v-for="item in importanceOptions" :key="item" :label="item" :value="item"/>
-      </el-select>
-      <el-select v-model="listQuery.type" :placeholder="$t('table.type')" clearable class="filter-item" style="width: 130px">
-        <el-option v-for="item in calendarTypeOptions" :key="item.key" :label="item.display_name+'('+item.key+')'" :value="item.key"/>
-      </el-select>
-      <el-select v-model="listQuery.sort" style="width: 140px" class="filter-item" @change="handleFilter">
-        <el-option v-for="item in sortOptions" :key="item.key" :label="item.label" :value="item.key"/>
-      </el-select>
+      <el-input placeholder="请输入关键字" v-model="listQuery.keyword" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"/>
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">{{ $t('table.search') }}</el-button>
       <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit" @click="handleCreate">{{ $t('table.add') }}</el-button>
       <el-button v-waves :loading="downloadLoading" class="filter-item" type="primary" icon="el-icon-download" @click="handleDownload">{{ $t('table.export') }}</el-button>
-      <el-checkbox v-model="showReviewer" class="filter-item" style="margin-left:15px;" @change="tableKey=tableKey+1">{{ $t('table.reviewer') }}</el-checkbox>
     </div>
     <el-table
       v-loading="listLoading"
@@ -46,20 +36,19 @@
       </el-table-column>
       <el-table-column :label="$t('table.createdDate')" width="150px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.createdAt | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
+          <span>{{ scope.row.createTime | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <el-table-column :label="$t('table.updatedDate')" width="150px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.updatedAt | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
+          <span>{{ scope.row.updateTime | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
       <el-table-column :label="$t('table.actions')" align="center" width="300" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">{{ $t('table.edit') }}</el-button>
-          <el-button style="padding:7px 6px;"  size="mini" type="success" @click="permission(scope.row, false)">查看權限
+          <el-button style="padding:7px 6px;"  size="mini" type="success" @click="permission(scope.row, false)">查看权限
           </el-button>
-          <el-button size="mini" type="danger" @click="permission(scope.row, true)">取消</el-button>
           <el-button size="mini" type="danger" @click="handleModifyStatus(scope.row,'deleted')">{{ $t('table.delete') }}
           </el-button>
         </template>
@@ -88,19 +77,44 @@
         <el-button v-else type="primary" @click="updateData">{{ $t('table.confirm') }}</el-button>
       </div>
     </el-dialog>
-    <el-dialog :visible.sync="dialogFormVisible2">
-      <el-form label-position="left" label-width="70px" style=" margin-left:50px;">
-        <el-form-item label="权限">
-          <el-checkbox-group v-model="auth.checkboxes">
-            <el-checkbox v-if="!isupdate" v-for="item in temp2" :label="item.permissionId"  >{{item.permissionName}}</el-checkbox>
-            <el-checkbox v-if="isupdate" v-for="item in ownerPerm" :label="item.permissionId"  >{{item.permissionName}}</el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-      </el-form>
+    <el-dialog :visible.sync="dialogFormVisible2" @close="dialogFormVisible2close">
+      <el-tabs  type="card"  v-model="activeName">
+        <el-tab-pane label="客户端功能权限" name="1">
+          <el-form style="margin-left: 20px;">
+            <el-form-item >
+              <el-checkbox-group v-model="auth.checkboxes">
+                <el-checkbox class="ebox-my"  v-for="item in temp3" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+        <el-tab-pane label="客户端菜单权限" name="2"><el-form style="margin-left: 20px;">
+            <el-form-item >
+              <el-checkbox-group v-model="auth.checkboxes">
+                <el-checkbox class="ebox-my"  v-for="item in temp3" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+          </el-form></el-tab-pane>
+        <el-tab-pane label="管理端功能权限" name="3"><el-form style="margin-left: 20px;">
+            <el-form-item >
+              <el-checkbox-group v-model="auth.checkboxes">
+                <el-checkbox class="ebox-my"  v-for="item in temp3" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+          </el-form></el-tab-pane>
+        <el-tab-pane label="管理端菜单权限" name="4">
+          <el-form style="margin-left: 20px;">
+            <el-form-item >
+              <el-checkbox-group v-model="auth.checkboxes">
+                <el-checkbox class="ebox-my"  v-for="item in temp3" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+      </el-tabs>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible2 = false">{{ $t('table.cancel') }}</el-button>
-        <el-button v-if="!isupdate" type="primary" @click="setAuth">{{ $t('table.confirm') }}</el-button>
-        <el-button v-if="isupdate" type="danger" @click="setAuthCancel">取消權限</el-button>
+        <el-button type="primary" @click="setAuth">编辑</el-button>
       </div>
     </el-dialog>
     <el-dialog :visible.sync="dialogPvVisible" title="Reading statistics">
@@ -124,18 +138,8 @@ import waves from '@/directive/waves' // 水波纹指令
 import { parseTime } from '@/utils'
 const Qs = require('qs')
 
-const calendarTypeOptions = [
-  { key: 'CN', display_name: 'China' },
-  { key: 'US', display_name: 'USA' },
-  { key: 'JP', display_name: 'Japan' },
-  { key: 'EU', display_name: 'Eurozone' }
-]
 
-// arr to obj ,such as { CN : "China", US : "USA" }
-const calendarTypeKeyValue = calendarTypeOptions.reduce((acc, cur) => {
-  acc[cur.key] = cur.display_name
-  return acc
-}, {})
+
 
 export default {
   name: 'ComplexTable',
@@ -157,9 +161,11 @@ export default {
   },
   data() {
     return {
+      activeName: '',
       tableKey: 0,
       list: null,
       total: null,
+      temp3: [],
       auth: {
         checkboxes: [],
         roleId: -1,
@@ -168,17 +174,9 @@ export default {
       listLoading: true,
       listQuery: {
         page: 1,
-        limit: 20,
-        importance: undefined,
-        title: undefined,
-        type: undefined,
-        sort: undefined
+        limit: 10,
+        keyword: undefined
       },
-      ownerPerm: [],
-      isupdate: false,
-      importanceOptions: [1, 2, 3],
-      calendarTypeOptions,
-      sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
       statusOptions: ['published', 'draft', 'deleted'],
       showReviewer: false,
       temp: {
@@ -207,31 +205,45 @@ export default {
     this.getList()
     this.getAuth()
   },
+  watch: {
+    activeName (newV, old) {
+      if (newV === old) {
+        return
+      }
+      if (!newV) return
+      this.temp3 = this.temp2.filter(item => {
+        return item.columnId == newV
+      })
+    }
+  },
   methods: {
     wocao (r) {
       return 'wocao_' + r
     },
     permission (row, flag) {
       let data = Object.assign({}, row)
-      this.ownerPerm.length = 0
       this.auth.checkboxes.length = 0
-      userApi.getPermByRole({roleId: data.roleId}).then(res=> {
-        for (let item of res.data.row) {
-          this.auth.checkboxes.push(item.permission_id)
-          this.ownerPerm.push({permissionId: item.permission_id, permissionName: item.permission_name})
+      userApi.getPermByRole({roleId: data.roleId, limit: 1000, offset: 0}).then(res=> {
+        let rows,arr = []
+        if (!res.data.success) {
+          rows = []
+        } else {
+          rows = res.data.data.rows
         }
+        for (let item of rows) {
+          arr.push(item.permissionId)
+        }
+        this.auth.checkboxes = arr
         this.auth.roleId = data.roleId
-        this.auth.prePerm = this.auth.checkboxes
+        this.auth.prePerm = Object.assign({}, arr)
         this.dialogFormVisible2 = true
-        this.isupdate = flag
+        this.activeName = 1
       })
     },
     setAuth () {
       userApi.addPerm({
-        ids: this.auth.checkboxes,
+        permissionIds: this.auth.checkboxes.join(','),
         roleId: this.auth.roleId
-      },function(params) {
-         return Qs.stringify({ids: params.ids,roleId: params.roleId}, {arrayFormat: 'repeat'})
       }).then((res) => { 
         if (res.data.success) {
           this.auth = {
@@ -309,7 +321,7 @@ export default {
       })
     },
     getAuth() {
-      permApi.getPermList().then(response => {
+      permApi.getPermListAll().then(response => {
         this.temp2 = response.data.data.row
         setTimeout(() => {
           this.listLoading = false
@@ -347,7 +359,7 @@ export default {
         type: 'warning'
       }).then(() => {
         if (status === 'deleted') {
-          userApi.delRole({roleId: row.roleId}).then(()=> {
+          userApi.delRole({ids: row.roleId}).then(()=> {
             this.$message({
               message: '操作成功',
               type: 'success'
@@ -406,6 +418,7 @@ export default {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           const tempData = Object.assign({}, this.temp)
+          tempData.updateTime = new Date().getTime()
           userApi.updateRole(tempData).then(() => {
             for (const v of this.list) {
               if (v.id === this.temp.id) {
@@ -441,11 +454,14 @@ export default {
         this.dialogPvVisible = true
       })
     },
+    dialogFormVisible2close() {
+      this.activeName = ''
+    },
     handleDownload() {
       this.downloadLoading = true
       import('@/vendor/Export2Excel').then(excel => {
-        const tHeader = ['timestamp', 'title', 'type', 'importance', 'status']
-        const filterVal = ['timestamp', 'title', 'type', 'importance', 'status']
+        const tHeader = ['角色名称', '角色编码', '备注']
+        const filterVal = ['roleName', 'roleCode', 'memo']
         const data = this.formatJson(filterVal, this.list)
         excel.export_json_to_excel({
           header: tHeader,
@@ -467,3 +483,12 @@ export default {
   }
 }
 </script>
+<style>
+  .ebox-my {
+    width: 120px;
+    margin-left: 0 !important;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    white-space: nowrap;
+  }
+</style>

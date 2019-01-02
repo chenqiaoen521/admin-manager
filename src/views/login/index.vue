@@ -86,8 +86,8 @@ export default {
     }
     return {
       loginForm: {
-        username: 'admin',
-        password: 'admin'
+        username: 'dawang',
+        password: '111111'
       },
       loginRules: {
         username: [{ required: true, trigger: 'blur', validator: validateUsername }],
@@ -126,14 +126,24 @@ export default {
       this.$refs.loginForm.validate(valid => {
         if (valid) {
           this.loading = true
-          this.$store.dispatch('LoginByUsername', this.loginForm).then(() => {
+          this.$store.dispatch('LoginByUsername', this.loginForm).then((res) => {
             this.loading = false
-            this.$router.push({ path: this.redirect || '/' })
+            if (res) {
+              this.$message({
+                message: '登录成功',
+                type: 'success'
+              })
+              this.$router.push({ path: this.redirect || '/' })
+            } else {
+              this.$message({
+                message: '用户名密码错误',
+                type: 'error'
+              })
+            }
           }).catch(() => {
             this.loading = false
           })
         } else {
-          console.log('error submit!!')
           return false
         }
       })

@@ -218,8 +218,7 @@ export default {
 <style>
   .custom-tree-container {
     float: left;
-    min-width: 150px;
-    overflow: hidden;
+    margin-left: 20px;
   }
   .custom-tree-node {
     flex: 1;

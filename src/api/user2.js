@@ -7,7 +7,21 @@ export function getUserList(query) {
     params: query
   })
 }
+export function UserRegister(data) {
+  return request({
+    url: '/sso/register',
+    method: 'put',
+    data
+  })
+}
 
+export function UserLogin(data) {
+  return request({
+    url: '/sso/login',
+    method: 'put',
+    data
+  })
+}
 export function findUser(data) {
   return request({
     url: '/api/user/find',
@@ -58,24 +72,23 @@ export function updateroleID(data) {
 
 export function getRoleList(query) {
   return request({
-    url: '/api/role2/list',
+    url: '/upmsManage/role/list',
     method: 'get',
     params: query
   })
 }
 
-export function userAddRole(params, paramsSerializer) {
+export function userAddRole(data) {
   return request({
-    url: '/api/user/addRole',
-    method: 'get',
-    params,
-    paramsSerializer
+    url: '/upmsManage/userRole/createRoles',
+    method: 'post',
+    data
   })
 }
 
 export function getUserByRole(params) {
   return request({
-    url: '/api/user/getUserByRole',
+    url: '/upmsManage/userRole/getRolesByUserId',
     method: 'get',
     params
   })
@@ -88,33 +101,31 @@ export function delRoleByUser(data) {
   })
 }
 
-export function addPerm(params, paramsSerializer) {
+export function addPerm(data) {
   return request({
-    url: '/api/role2/addPerm',
-    method: 'get',
-    params,
-    paramsSerializer
+    url: '/upmsManage/rolePermission/create',
+    method: 'post',
+    data
   })
 }
 
-export function addDeptByUser(params, paramsSerializer) {
+export function addDeptByUser(data) {
   return request({
-    url: '/api/user/addDept',
-    method: 'get',
-    params,
-    paramsSerializer
+    url: '/upmsManage/userDepartment/create',
+    method: 'post',
+    data
   })
 }
 export function delDeptByUser(data) {
   return request({
-    url: '/api/user/delDeptByUser',
+    url: '/upmsManage/userDepartment/delete',
     method: 'delete',
     data
   })
 }
 export function getPermByRole(params) {
   return request({
-    url: '/api/role2/getPermByRole',
+    url: '/upmsManage/rolePermission/getPermissions',
     method: 'get',
     params
   })
@@ -128,21 +139,21 @@ export function delPermByRole(data) {
 }
 export function addRole(data) {
   return request({
-    url: '/api/role2/create',
-    method: 'put',
+    url: '/upmsManage/role/create',
+    method: 'post',
     data
   })
 }
 export function delRole(data) {
   return request({
-    url: '/api/role2/delete',
+    url: '/upmsManage/role/delete',
     method: 'delete',
     data
   })
 }
 export function updateRole(data) {
   return request({
-    url: '/api/role2/edit',
+    url: '/upmsManage/role/update',
     method: 'put',
     data
   })

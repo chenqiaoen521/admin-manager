@@ -14,7 +14,7 @@ function hasPermission(roles, route) {
     return true
   } */
   return roles.some(role => {
-    return route.path === role.permission_uri
+    return route.path === role.permissionUri
   })
 }
 function hasPath(roles, path, father) {
@@ -23,12 +23,12 @@ function hasPath(roles, path, father) {
     }
   if (father) {
     return roles.some(role => {
-      return role.permission_uri === father + '/' + path
+      return role.permissionUri === father + '/' + path
     })
 
   } else {
     return roles.some(role => {
-      return role.permission_uri.indexOf(path) !== -1
+      return role.permissionUri.indexOf(path) !== -1
     })
   }
 }
@@ -63,15 +63,9 @@ const permission = {
     }
   },
   actions: {
-    GenerateRoutes({ commit }, data) {
+    GenerateRoutes({ commit }, roles) { 
       return new Promise(resolve => {
-        const { roles } = data
-        let accessedRouters // eslint-disable-line
-        if (roles.indexOf('admin') >= 0) {
-          accessedRouters = asyncRouterMap
-        } else {
-          accessedRouters = filterAsyncRouter(asyncRouterMap, roles)
-        }
+        let accessedRouters = filterAsyncRouter(asyncRouterMap, roles)
         commit('SET_ROUTERS', accessedRouters)
         resolve()
       })

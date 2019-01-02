@@ -1,10 +1,11 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-input :placeholder="$t('table.title')" v-model="listQuery.title" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"/>
+      <el-input placeholder="关键字搜索" v-model="listQuery.keyword" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"/>
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">{{ $t('table.search') }}</el-button>
       <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit" @click="handleCreate">添加用户</el-button>
       <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit" @click="deptAdd">添加部门</el-button>
+      <el-button v-waves :loading="downloadLoading" class="filter-item" type="primary" icon="el-icon-download" @click="handleDownload">{{ $t('table.export') }}</el-button>
     </div>
 
     <el-table
@@ -35,9 +36,9 @@
           <span> {{ scope.row.userCode }} </span>
         </template>
       </el-table-column>
-      <el-table-column label="卡号">
+      <el-table-column label="所属部门" width="350" align="center">
         <template slot-scope="scope">
-          <span> {{ scope.row.idcard }} </span>
+          <el-tag  @close="handleClose(item, scope.row)" closable v-for="item in scope.row.departments">{{item.departmentName}}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="邮箱">
@@ -50,19 +51,9 @@
           <span> {{ scope.row.phone }} </span>
         </template>
       </el-table-column>
-      <el-table-column label="是否在线">
-        <template slot-scope="scope">
-          <el-tag type="info">{{scope.row.online === 0 ? '离线' : '在线'}}</el-tag>
-        </template>
-      </el-table-column>
       <el-table-column :label="$t('table.status')">
         <template slot-scope="scope">
           <el-tag :type="scope.row.locked === 0 ? 'success' : 'danger'">{{scope.row.locked | parseStatus}}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="是否记住我">
-        <template slot-scope="scope">
-          <el-tag type="info">{{scope.row.rememberMe === 0 ? '不记住' : '记住我'}}</el-tag>
         </template>
       </el-table-column>
       <el-table-column :label="$t('table.createdDate')" align="center">
@@ -75,15 +66,15 @@
           <span>{{ scope.row.updateTime | parseTime('{y}-{m}-{d} {h}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="用户到期时间" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.expireDateline | parseTime('{y}-{m}-{d} {h}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" align="center" width="250" class-name="small-padding fixed-width">
+    <!--   <el-table-column label="用户到期时间" align="center">
+      <template slot-scope="scope">
+        <span>{{ scope.row.expireDateline | parseTime('{y}-{m}-{d} {h}') }}</span>
+      </template>
+    </el-table-column> -->
+      <el-table-column :label="$t('table.actions')" align="center" class-name="small-padding fixed-width"  fixed="right" width="300">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">{{ $t('table.edit') }}</el-button>
-          <el-button  size="mini" type="success" @click="handleuserole(scope.row)">{{ $t('table.userole') }}
+          <el-button  size="mini" type="success"   style="padding:7px 6px;"  @click="handleuserole(scope.row, false)">查看角色
           </el-button>
           <el-button size="mini" type="danger" @click="handleModifyStatus(scope.row,'deleted')">{{ $t('table.delete') }}
           </el-button>
@@ -96,9 +87,12 @@
     </div>
 
     <el-dialog width="550px" :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
-      <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="90px" style="width: 400px; margin-left:50px;">
-        <el-form-item :label="$t('table.username')" prop="userName">
-          <el-input :disabled="dialogStatus === 'update'" v-model="temp.userName"/>
+      <el-form ref="dataForm"  :rules="dialogStatus === 'update' ? {} : rules" :model="temp" label-position="left" label-width="90px" style="width: 400px; margin-left:50px;">
+        <el-form-item label="用户编码" prop="userCode">
+          <el-input  v-model="temp.userCode"/>
+        </el-form-item>
+        <el-form-item label="名称" prop="userName">
+          <el-input  v-model="temp.userName"/>
         </el-form-item>
         <el-form-item :label="$t('table.password')" prop="password">
           <el-input type="password" v-model="temp.password"/>
@@ -108,9 +102,6 @@
         </el-form-item>
         <el-form-item label="电话号码" prop="phone">
           <el-input v-model="temp.phone"/>
-        </el-form-item>
-        <el-form-item label="用户编码" prop="userCode">
-          <el-input v-model="temp.userCode"/>
         </el-form-item>
         <el-form-item label="用户卡号" prop="idcard">
           <el-input v-model="temp.idcard"/>
@@ -126,7 +117,7 @@
       </div>
     </el-dialog>
     <el-dialog width="450px" title="添加部门" :visible.sync="deptVisible">
-      部门名称：<el-input v-model="treeinputdata" placeholder="请选择下面的部门" disabled class="inputtree-input"></el-input>
+      部门名称：<el-input v-model="treeinputdata.departmentName" placeholder="请选择下面的部门" disabled class="inputtree-input"></el-input>
       <div class="custom-tree-container">
         <el-tree
           :data="treedata"
@@ -139,21 +130,22 @@
       </div>
       <div slot="footer" class="dialog-footer">
         <el-button @click="deptVisible = false">{{ $t('table.cancel') }}</el-button>
-        <el-button v-if="dialogStatus=='create'" type="primary" @click="createData">{{ $t('table.confirm') }}</el-button>
-        <el-button v-else type="primary" @click="updateData">{{ $t('table.confirm') }}</el-button>
+        <el-button  type="primary" @click="confirmDept">{{ $t('table.confirm') }}</el-button>
+        <!-- <el-button v-else type="primary" @click="updateData">{{ $t('table.confirm') }}</el-button> -->
       </div>
     </el-dialog>
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible2">
-      <el-form ref="dataForm" :model="temp" label-position="left" label-width="90px" style="width: 400px; margin-left:50px;">
-        <el-radio-group v-model="temp.yd_role_id">
-          <el-radio v-for="item in temp2" :label="item.id">{{item.name}}</el-radio>
-        </el-radio-group>
+      <el-form label-position="left" label-width="90px" style="margin-left:50px;">
+        <el-checkbox-group v-model="userrole.ids">
+          <el-checkbox  v-for="item in temp2" :label="item.roleId">{{item.roleName}}</el-checkbox>
+        </el-checkbox-group>
     </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogFormVisible2 = false">{{ $t('table.cancel') }}</el-button>
-        <el-button type="primary" @click="updateRole">{{ $t('table.confirm') }}</el-button>
+        <el-button type="primary" @click="updateRole">编辑</el-button>
       </div>
     </el-dialog>
+
 
     <el-dialog :visible.sync="dialogPvVisible" title="Reading statistics">
       <el-table :data="pvData" border fit highlight-current-row style="width: 100%">
@@ -231,6 +223,7 @@ export default {
       }
     }
     return {
+      downloadLoading: false,
       treedata: [],
       treeinputdata: '',
       dialogFormVisible2: false,
@@ -239,14 +232,16 @@ export default {
       list: null,
       total: null,
       listLoading: true,
+      userrole: {
+        ids: [],
+        userId: -1,
+        preIds: []
+      },
       temp2: null,
       listQuery: {
         page: 1,
-        limit: 20,
-        importance: undefined,
-        title: undefined,
-        type: undefined,
-        sort: undefined
+        limit: 10,
+        keyword: undefined
       },
       defaultProps: {
         children: 'children',
@@ -275,10 +270,14 @@ export default {
       pvData: [],
       rules: {
         userName: [
-          { required: true, message: '用户名是必填项', trigger: 'blur' }
+          { required: true, message: '用户名称是必填项', trigger: 'blur' }
+        ],
+        userCode: [
+          { required: true, message: '用户编码是必填项', trigger: 'blur' }
         ],
         password: [
-          { required: true, message: '密码是必填项', trigger: 'blur' }
+          { required: true, message: '密码是必填项', trigger: 'blur' },
+          {  min: 6, max: 16, message: '长度在 6 到 16 个字符', trigger: 'blur'}
         ],
         relpassword: [
            { required: true, message: '请确认密码', trigger: 'blur' },
@@ -291,18 +290,81 @@ export default {
   created() {
     this.getList()
     this.getRoles()
+    this.getDepts()
   },
   methods: {
-    deptAdd () {
+    delDept(userId, departmentId) {
+      return userApi.delDeptByUser({
+        userIds: userId,
+        departmentId
+      }).then(res => {
+        this.$notify({
+          title: '提示',
+          message: res.data.message,
+          type: res.data.success ? 'success' : 'error',
+          duration: 2000
+        })
+        return res.data.success
+      }, err => {
+         this.$notify({
+          title: '失败',
+          message: err,
+          type: 'error',
+          duration: 2000
+        }) 
+      })
+    },
+    handleClose(tag, rows) {
+      this.delDept(rows.userId, tag.departmentId).then(res => {
+        if (res) {
+          rows.departments.splice(rows.departments.findIndex(item => {
+            return item.departmentId = tag.departmentId
+          }), 1);
+        }
+      })
+    },
+    getDepts() {
       this.getTree().then(res => {
         if (res) {
           this.treedata = res
         }
       })
+    },
+    confirmDept() {
+      userApi.addDeptByUser({
+        departmentId: this.treeinputdata.departmentId,
+        userIds: this.selectRows.map(item => item.userId).join(',')
+      }).then(res => {
+        this.deptVisible = false
+        this.$notify({
+          title: '提示',
+          message: res.data.message,
+          type: res.data.success ? 'success' : 'error',
+          duration: 2000
+        })
+        //this.getList()
+      }, err => {
+        this.deptVisible = false
+        this.$notify({
+          title: '失败',
+          message: err,
+          type: 'error',
+          duration: 2000
+        })
+      })
+    },
+    deptAdd () {
+      if (!this.selectRows || !this.selectRows.length) {
+        this.$message({
+          message: '没有选中任何一个用户',
+          type: 'warning'
+        })
+        return
+      }
       this.deptVisible = true
     },
     clicktree (e) {
-      this.treeinputdata = e.departmentName
+      this.treeinputdata = e
     },
     getTree() {
       return deptApi.getDeptList().then(res => {
@@ -350,11 +412,26 @@ export default {
       }
     },
     handleSelectionChange (val) {
-      console.log(val)
+      this.selectRows = val
     },
-    handleuserole (row) {
-      this.dialogFormVisible2 = true
+    handleuserole (row, flag) {
       this.temp = Object.assign({}, row)
+      userApi.getUserByRole({userId: this.temp.userId}).then(res=> {
+        let rows
+        if (!res.data.success) {
+          rows = []
+        } else {
+          rows = res.data.data.rows
+        }
+        let arr = []
+        for (let item of rows) {
+          arr.push(item.roleId)
+        }
+        this.userrole.userId = row.userId
+        this.userrole.ids = arr
+        this.userrole.preIds = arr
+        this.dialogFormVisible2 = true
+      })
     },
     getList() {
       this.listLoading = true
@@ -370,7 +447,7 @@ export default {
     },
     getRoles () {
       userApi.getRoleList().then(response => {
-        this.temp2 = response.data.data
+        this.temp2 = response.data.data.rows
         setTimeout(() => {
           this.listLoading = false
         }, 1.5 * 100)
@@ -395,7 +472,7 @@ export default {
         type: 'warning'
       }).then(() => {
         if (status === 'deleted') {
-          userApi.delUser({ids: row.id}).then(()=> {
+          userApi.delUser({ids: row.userId}).then(()=> {
             this.$message({
               message: '操作成功',
               type: 'success'
@@ -431,18 +508,32 @@ export default {
         this.$refs['dataForm'].clearValidate()
       })
     },
+    handleDownload() {
+      this.downloadLoading = true
+      import('@/vendor/Export2Excel').then(excel => {
+        const tHeader = ['用户名称', '编号', '部门', '邮箱', '电话号码']
+        const filterVal = ['userName', 'userCode', 'departments', 'email', 'phone']
+        const data = this.formatJson(filterVal, this.list)
+        excel.export_json_to_excel({
+          header: tHeader,
+          data,
+          filename: 'table-list'
+        })
+        this.downloadLoading = false
+      })
+    },
     createData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           this.temp.locked ? this.temp.locked = 0 : this.temp.locked = 1
           delete this.temp.relpassword
-          userApi.addUser(this.temp).then(() => {
+          userApi.addUser(this.temp).then((res) => {
             this.list.unshift(this.temp)
             this.dialogFormVisible = false
             this.$notify({
-              title: '成功',
-              message: '创建成功',
-              type: 'success',
+              title: '提示',
+              message: res.data.message,
+              type: res.data.success ? 'success' : 'error',
               duration: 2000
             })
           })
@@ -450,7 +541,9 @@ export default {
       })
     },
     handleUpdate(row) {
-      this.temp = Object.assign({}, row) // copy obj
+      this.temp =  Object.assign({}, row)// copy obj
+      this.temp.relpassword = ''
+      this.temp.password = ''
       this.temp.relpassword = this.temp.password
       this.temp.locked === 0 ?  this.temp.locked = false :  this.temp.locked = true
       this.dialogStatus = 'update'
@@ -464,7 +557,11 @@ export default {
         if (valid) {
           const tempData = Object.assign({}, this.temp)
           tempData.locked ? tempData.locked = 1 : tempData.locked = 0
-          userApi.updatePass(tempData).then(() => {
+          if (!tempData.password) {
+            delete tempData.password
+          }
+          tempData.updateTime = new Date().getTime()
+          userApi.updatePass(tempData).then((res) => {
             for (const v of this.list) {
               if (v.userId === tempData.userId) {
                 const index = this.list.indexOf(v)
@@ -475,9 +572,9 @@ export default {
             }
             this.dialogFormVisible = false
             this.$notify({
-              title: '成功',
-              message: '更新成功',
-              type: 'success',
+              title: '提示',
+              message: res.data.message,
+              type: res.data.success ? 'success' : 'error',
               duration: 2000
             })
           })
@@ -485,26 +582,92 @@ export default {
       })
     },
     updateRole() {
-      this.$refs['dataForm'].validate((valid) => {
-        if (valid) {
-          const tempData = Object.assign({}, this.temp)
-          userApi.updateroleID(tempData).then(() => {
-            for (const v of this.list) {
-              if (v.id === this.temp.id) {
-                const index = this.list.indexOf(v)
-                this.list.splice(index, 1, this.temp)
-                break
-              }
-            }
-            this.dialogFormVisible2 = false
-            this.$notify({
-              title: '成功',
-              message: '更新成功',
-              type: 'success',
-              duration: 2000
-            })
+      userApi.userAddRole({
+        roleIds: this.userrole.ids.join(','),
+        userId: this.userrole.userId
+      }).then((res) => { 
+          this.userrole = {
+            ids: [],
+            id: -1,
+            preIds: []
+          }
+          this.$notify({
+            title: '提示',
+            message: res.data.message,
+            type: res.data.success ? 'success' : 'error',
+            duration: 2000
+          })
+        
+        this.dialogFormVisible2 = false 
+      },()=>{
+        this.$notify({
+          title: '失敗',
+          message: '分角色失敗',
+          type: 'error',
+          duration: 2000
+        })
+        this.dialogFormVisible2 = false 
+      })
+      /*const tempData = Object.assign({}, this.temp)
+      userApi.updateroleID(tempData).then(() => {
+        for (const v of this.list) {
+          if (v.id === this.temp.id) {
+            const index = this.list.indexOf(v)
+            this.list.splice(index, 1, this.temp)
+            break
+          }
+        }
+        this.dialogFormVisible2 = false
+        this.$notify({
+          title: '成功',
+          message: '更新成功',
+          type: 'success',
+          duration: 2000
+        })
+      })*/
+    },
+    setRoleCancel () {
+      let arr = [];
+      for (let item of this.userrole.preIds) {
+        if (!this.userrole.ids.includes(item)) {
+          arr.push(item)
+        }
+      }
+      user2Api.delRoleByUser({
+        ids: arr,
+        id: this.userrole.id
+      },function(params) {
+         return Qs.stringify({ids: params.ids,id: params.id}, {arrayFormat: 'repeat'})
+      }).then((res) => { 
+        if (res.data.success) {
+          this.auth = {
+            checkboxes: [],
+            roleId: -1,
+            prePerm: []
+          }
+          this.$notify({
+            title: '成功',
+            message: '取消成功',
+            type: 'success',
+            duration: 2000
+          })
+        } else {
+          this.$notify({
+            title: '失敗',
+            message: '取消失敗',
+            type: 'error',
+            duration: 2000
           })
         }
+        this.dialogFormVisible2 = false 
+      },()=>{
+        this.$notify({
+          title: '失敗',
+          message: '取消失敗',
+          type: 'error',
+          duration: 2000
+        })
+        this.dialogFormVisible2 = false 
       })
     },
     handleDelete(row) {
@@ -527,6 +690,10 @@ export default {
       return jsonData.map(v => filterVal.map(j => {
         if (j === 'timestamp') {
           return parseTime(v[j])
+        } else if (j === 'departments') {
+          return v[j].map(res => {
+            return res.departmentName
+          }).join(',')
         } else {
           return v[j]
         }
@@ -539,8 +706,7 @@ export default {
   .custom-tree-container {
     float: left;
     min-width: 150px;
-    margin-left: 75px;
-    width: 310px;
+    width: 400px;
     height: 250px;
     overflow: auto;
   }
@@ -556,5 +722,20 @@ export default {
   .inputtree-input{
     margin-bottom: 2px;
     width: 322px;
+  }
+   .el-tag + .el-tag {
+    margin-left: 10px;
+  }
+  .button-new-tag {
+    margin-left: 10px;
+    height: 32px;
+    line-height: 30px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .input-new-tag {
+    width: 90px;
+    margin-left: 10px;
+    vertical-align: bottom;
   }
 </style>

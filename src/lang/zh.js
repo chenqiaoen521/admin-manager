@@ -12,6 +12,8 @@ export default {
     authlist: '权限列表',
     menulist: '菜单列表',
     permission: '权限测试页',
+    deviceManage: '设备组列表',
+    device: '设备管理',
     pagePermission: '页面权限',
     directivePermission: '指令权限',
     icons: '图标',

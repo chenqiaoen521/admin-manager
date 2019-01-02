@@ -2,27 +2,46 @@ import request from '@/utils/request'
 
 export function loginByUsername(username, password) {
   const data = {
-    username,
-    password
+    userCode: username,
+    password,
+    rememberMe: 0
   }
   return request({
-    url: '/api/login',
-    method: 'post',
+    url: '/sso/login',
+    method: 'put',
     data
   })
 }
 
 export function logout() {
   return request({
-    url: '/login/logout',
-    method: 'post'
+    url: '/sso/logout',
+    method: 'put'
   })
 }
 
-export function getUserInfo() {
+export function getUserInfo(userCode) {
   return request({
-    url: '/api/login/info',
-    method: 'get'
+    url: '/upmsManage/permission/permissionsByUserId',
+    method: 'get',
+    params: {
+      userCode
+    }
   })
 }
 
+export function UserRegister(data) {
+  return request({
+    url: '/sso/register',
+    method: 'put',
+    data
+  })
+}
+
+export function UserLogin(data) {
+  return request({
+    url: '/sso/login',
+    method: 'put',
+    data
+  })
+}

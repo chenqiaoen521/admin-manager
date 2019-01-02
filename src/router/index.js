@@ -74,7 +74,16 @@ export const constantRouterMap = [
         meta: { title: 'dashboard', icon: 'dashboard', noCache: true }
       }
     ]
-  },
+  }
+]
+
+export default new Router({
+  // mode: 'history', // require service support
+  scrollBehavior: () => ({ y: 0 }),
+  routes: constantRouterMap
+})
+
+export const asyncRouterMap = [
   {
     path: '/documentation',
     component: Layout,
@@ -100,16 +109,7 @@ export const constantRouterMap = [
         meta: { title: 'guide', icon: 'guide', noCache: true }
       }
     ]
-  }
-]
-
-export default new Router({
-  // mode: 'history', // require service support
-  scrollBehavior: () => ({ y: 0 }),
-  routes: constantRouterMap
-})
-
-export const asyncRouterMap = [
+  },
   {
     path: '/permission',
     component: Layout,
@@ -174,18 +174,10 @@ export const asyncRouterMap = [
       roles: ['admin', 'editor'] // you can set roles in root nav
     },
     children: [
-    /* {
-        path: 'list',
-        component: () => import('@/views/user/user2'),
-        name: 'userlist',
-        meta: {
-          title: 'userlist',
-          roles: ['admin'] // or you can only set roles in sub nav
-        }
-      },*/
       {
         path: 'list',
-        component: () => import('@/views/user/list'),
+        component: () => import('@/views/user/user2'),
+        //component: () => import('@/views/user/list'),
         name: 'userlist',
         meta: {
           title: 'userlist',
@@ -218,14 +210,25 @@ export const asyncRouterMap = [
           title: 'authlist',
           roles: ['admin'] // or you can only set roles in sub nav
         }
-      },
+      }
+    ]
+  },
+  {
+    path: '/device',
+    component: Layout,
+    redirect: '/device/list',
+    alwaysShow: true, // will always show the root menu
+    meta: {
+      title: 'device',
+      icon: 'device'
+    },
+    children: [
       {
-        path: 'menu',
-        component: () => import('@/views/user/menu/index'),
-        name: 'menulist',
+        path: 'list',
+        component: () => import('@/views/device/list'),
+        name: 'deviceManage',
         meta: {
-          title: 'menulist',
-          roles: ['admin'] // or you can only set roles in sub nav
+          title: 'deviceManage'
         }
       }
     ]

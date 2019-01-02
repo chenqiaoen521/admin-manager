@@ -2,14 +2,14 @@ import request from '@/utils/request'
 
 export function getDeptList() {
   return request({
-    url: '/api/department/selectAll',
+    url: '/upmsManage/department/selectAll',
     method: 'get'
   })
 }
 
 export function createDept(data) {
   return request({
-    url: '/api/department/create',
+    url: '/upmsManage/department/create',
     method: 'post',
     data
   })
@@ -17,7 +17,7 @@ export function createDept(data) {
 
 export function editDept(data) {
   return request({
-    url: '/api/department/update',
+    url: '/upmsManage/department/update',
     method: 'put',
     data
   })
@@ -25,7 +25,7 @@ export function editDept(data) {
 
 export function delDept(data) {
   return request({
-    url: '/api/department/delete',
+    url: '/upmsManage/department/delete',
     method: 'delete',
     data
   })
