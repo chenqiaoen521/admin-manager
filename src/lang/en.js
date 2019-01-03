@@ -15,6 +15,7 @@ export default {
     deviceManage: 'deviceManage',
     componentIndex: 'Introduction',
     tinymce: 'Tinymce',
+    log: 'log',
     markdown: 'Markdown',
     jsonEditor: 'JSON Editor',
     dndList: 'Dnd List',

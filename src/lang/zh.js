@@ -13,7 +13,8 @@ export default {
     menulist: '菜单列表',
     permission: '权限测试页',
     deviceManage: '设备组列表',
-    device: '设备管理',
+    device: '设备组',
+    log: '日志管理',
     pagePermission: '页面权限',
     directivePermission: '指令权限',
     icons: '图标',
@@ -81,7 +82,7 @@ export default {
     size: '布局大小'
   },
   login: {
-    title: '系统登录',
+    title: '快鱼权限系统',
     logIn: '登录',
     username: '账号',
     password: '密码',

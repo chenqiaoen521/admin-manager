@@ -1,9 +1,27 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-input :placeholder="$t('table.title')" v-model="listQuery.keyword" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"/>
-
-      <el-select v-model="listQuery.columnId" style="width: 160px" class="filter-item" @change="handleFilter">
+      <el-input placeholder="关键字搜索" v-model="listQuery.keyword" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter"/>
+      <el-date-picker
+        v-model="listQuery.startTime"
+        type="datetime"
+        class="filter-item"
+        placeholder="选择开始日期"
+        @change="transTime($event, 'startTime')"
+        align="right"
+        :picker-options="pickerOptions">
+      </el-date-picker>
+      <el-date-picker
+        v-model="listQuery.endTime"
+        type="datetime"
+        @change="transTime($event, 'endTime')"
+        class="filter-item"
+        placeholder="选择结束日期"
+        align="right"
+        :picker-options="pickerOptions">
+      </el-date-picker>
+      <el-select v-model="listQuery.logType" style="width: 160px" class="filter-item" @change="handleFilter">
+        <el-option label="全部" :value="undefined"/>
         <el-option v-for="item in typeCol" :key="item.id" :label="item.label" :value="item.id"/>
       </el-select>
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">{{ $t('table.search') }}</el-button>
@@ -20,41 +38,45 @@
       style="width: 100%;">
       <el-table-column :label="$t('table.id')" type="index" align="center" width="65">
       </el-table-column>
-      <el-table-column label="编码" >
+      <el-table-column label="用户IP" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.permissionCode }}</span>
+          <span>{{ scope.row.userIp }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="uri" >
+      <el-table-column  label="事件"  align="center">
         <template slot-scope="scope">
-          <span> {{ scope.row.permissionUri }} </span>
+           <span> {{ scope.row.logEvent }}</span>
         </template>
       </el-table-column>
-      <el-table-column  label="权限名称" >
+      <el-table-column  label="类型" align="center">
         <template slot-scope="scope">
-           <span> {{ scope.row.permissionName }}</span>
+           <span> {{ scope.row.logType | colFilter}} </span>
         </template>
       </el-table-column>
-      <el-table-column  label="权限类型">
+      <el-table-column  label="用户账号" align="center">
         <template slot-scope="scope">
-           <span> {{ scope.row.columnId | colFilter}} </span>
+           <span> {{ scope.row.userCode }} </span>
+        </template>
+      </el-table-column>
+      <el-table-column  label="信息" align="center">
+        <template slot-scope="scope">
+           <span> {{ scope.row.logMessage }} </span>
+        </template>
+      </el-table-column>
+      <el-table-column  label="是否成功" align="center">
+        <template slot-scope="scope">
+           <el-tag v-if="scope.row.logSucess" type="success">成功</el-tag>
+           <el-tag v-else type="danger">失败</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column  label="描述" align="center">
+        <template slot-scope="scope">
+           <span> {{ scope.row.logDesc }} </span>
         </template>
       </el-table-column>
       <el-table-column :label="$t('table.createdDate')" width="150px" align="center">
         <template slot-scope="scope">
-          <span>{{ scope.row.createTime | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :label="$t('table.updatedDate')" width="150px" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.updateTime | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column :label="$t('table.actions')" align="center"  class-name="small-padding fixed-width">
-        <template slot-scope="scope">
-          <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">{{ $t('table.edit') }}</el-button>
-          <el-button size="mini" type="danger" @click="handleModifyStatus(scope.row,'deleted')">{{ $t('table.delete') }}
-          </el-button>
+          <span>{{ scope.row.logCreateTime | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
     </el-table>
@@ -103,7 +125,7 @@
 </template>
 
 <script>
-import * as permApi from '@/api/perm'
+import * as Api from '@/api/log'
 import waves from '@/directive/waves' // 水波纹指令
 import { parseTime} from '@/utils'
 
@@ -129,28 +151,50 @@ export default {
     colFilter(val) {
       switch (val) {
         case 1:
-          return '客户端功能权限'
-          break;
+          return '增加'
         case 2:
-           return '客户端菜单权限'
-          break;
+           return '修改'
         case 3:
-           return '管理端功能权限'
-          break;
+           return '删除'
         case 4:
-           return '管理端菜单权限'
+           return '查询'
+        case 5:
+           return '异常'
       }
     }
   },
   data() {
     return {
+      pickerOptions: {
+        shortcuts: [{
+          text: '今天',
+          onClick(picker) {
+            picker.$emit('pick', new Date())
+          }
+        }, {
+          text: '昨天',
+          onClick(picker) {
+            const date = new Date()
+            date.setTime(date.getTime() - 3600 * 1000 * 24)
+            picker.$emit('pick', date);
+          }
+        }, {
+          text: '一周前',
+          onClick(picker) {
+            const date = new Date()
+            date.setTime(date.getTime() - 3600 * 1000 * 24 * 7)
+            picker.$emit('pick', date);
+          }
+        }]
+      },
       dialogFormVisible2: false,
       tableKey: 0,
       typeCol: [
-        {label: '客户端功能权限', id: 1},
-        {label: '客户端菜单权限', id: 2},
-        {label: '管理端功能权限', id: 3},
-        {label: '管理端菜单权限', id: 4}
+        {label: '增加', id: 1},
+        {label: '修改', id: 2},
+        {label: '删除', id: 3},
+        {label: '查询', id: 4},
+        {label: '异常', id: 5}
       ],
       list: null,
       total: null, 
@@ -159,7 +203,10 @@ export default {
       listQuery: {
         page: 1,
         limit: 10,
-        keyword: undefined
+        keyword: undefined,
+        logType: undefined,
+        endTime: undefined,
+        startTime: undefined
       },
       sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
       statusOptions: ['published', 'draft', 'deleted'],
@@ -207,10 +254,14 @@ export default {
     updateStat ({id, status} = res) {
       userApi.updateStatus({id, status})
     },
+    transTime(e, name) {
+      console.log(e)
+      this.listQuery[name] = new Date(e).getTime()
+    },
     getList() {
       this.listLoading = true
       this.listQuery.offset = (this.listQuery.page - 1) * this.listQuery.limit
-      permApi.getPermList(this.listQuery).then(response => {
+      Api.logList(this.listQuery).then(response => {
         this.list = response.data.data.rows
         this.total = response.data.data.total
         setTimeout(() => {

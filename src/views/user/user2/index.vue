@@ -159,24 +159,10 @@
   </div>
 </template>
 <script>
-import { fetchList, fetchPv, createArticle, updateArticle } from '@/api/article'
 import * as deptApi from '@/api/dept'
 import * as userApi from '@/api/user2'
 import waves from '@/directive/waves' // 水波纹指令
 import { parseTime} from '@/utils'
-
-const calendarTypeOptions = [
-  { key: 'CN', display_name: 'China' },
-  { key: 'US', display_name: 'USA' },
-  { key: 'JP', display_name: 'Japan' },
-  { key: 'EU', display_name: 'Eurozone' }
-]
-
-// arr to obj ,such as { CN : "China", US : "USA" }
-const calendarTypeKeyValue = calendarTypeOptions.reduce((acc, cur) => {
-  acc[cur.key] = cur.display_name
-  return acc
-}, {})
 
 export default {
   name: 'role',
@@ -248,7 +234,6 @@ export default {
         label: 'departmentName'
       },
       importanceOptions: [1, 2, 3],
-      calendarTypeOptions,
       sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
       statusOptions: ['published', 'draft', 'deleted'],
       temp: {
@@ -435,7 +420,7 @@ export default {
     },
     getList() {
       this.listLoading = true
-      this.listQuery.offset = this.listQuery.page - 1
+      this.listQuery.offset = (this.listQuery.page - 1) * this.listQuery.limit
       userApi.getUserList(this.listQuery).then(response => {
         this.list = response.data.data.rows
         this.total = response.data.data.total

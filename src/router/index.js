@@ -234,6 +234,19 @@ export const asyncRouterMap = [
     ]
   },
   {
+    path: '/log',
+    component: Layout,
+    redirect: '/log/list',
+    children: [
+      {
+        path: 'list',
+        component: () => import('@/views/log/list'),
+        name: 'log',
+        meta: { title: 'log', icon: 'log', noCache: true }
+      }
+    ]
+  },
+  {
     path: '/icon',
     component: Layout,
     children: [

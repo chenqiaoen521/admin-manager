@@ -131,7 +131,6 @@
 </template>
 
 <script>
-import { fetchList, fetchPv, createArticle, updateArticle } from '@/api/article'
 import * as userApi from '@/api/user2'
 import * as permApi from '@/api/perm'
 import waves from '@/directive/waves' // 水波纹指令
@@ -330,7 +329,7 @@ export default {
     },
     getList() {
       this.listLoading = true
-      this.listQuery.offset = this.listQuery.page - 1
+      this.listQuery.offset = (this.listQuery.page - 1) * this.listQuery.limit
       userApi.getRoleList(this.listQuery).then(response => {
         this.list = response.data.data.rows
         this.total = response.data.data.total

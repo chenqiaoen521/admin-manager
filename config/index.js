@@ -21,6 +21,10 @@ module.exports = {
       '/sso': {
         target: 'http://192.168.3.97:8086',
         changeOrigin: true
+      },
+      '/systemManage': {
+        target: 'http://192.168.3.97:8086',
+        changeOrigin: true
       }
     },
 
