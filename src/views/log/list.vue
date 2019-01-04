@@ -335,13 +335,7 @@ export default {
         if (valid) {
           const tempData = Object.assign({}, this.temp)
           permApi.editPerm(tempData).then(() => {
-            for (const v of this.list) {
-              if (v.id === this.temp.id) {
-                const index = this.list.indexOf(v)
-                this.list.splice(index, 1, this.temp)
-                break
-              }
-            }
+            this.getList()
             this.dialogFormVisible = false
             this.$notify({
               title: '成功',

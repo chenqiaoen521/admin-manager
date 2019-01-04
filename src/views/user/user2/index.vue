@@ -321,6 +321,7 @@ export default {
         userIds: this.selectRows.map(item => item.userId).join(',')
       }).then(res => {
         this.deptVisible = false
+        this.getList()
         this.$notify({
           title: '提示',
           message: res.data.message,
@@ -547,14 +548,7 @@ export default {
           }
           tempData.updateTime = new Date().getTime()
           userApi.updatePass(tempData).then((res) => {
-            for (const v of this.list) {
-              if (v.userId === tempData.userId) {
-                const index = this.list.indexOf(v)
-                const obj = Object.assign({}, this.list[index], tempData)
-                this.list.splice(index, 1, obj)
-                break
-              }
-            }
+            this.getList()
             this.dialogFormVisible = false
             this.$notify({
               title: '提示',

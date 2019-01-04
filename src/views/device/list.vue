@@ -402,13 +402,7 @@ export default {
           const tempData = Object.assign({}, this.temp)
           tempData.updateTime = new Date().getTime()
           deviceApi.deviceUpdate(tempData).then(() => {
-            for (const v of this.list) {
-              if (v.deviceGroupId === this.temp.deviceGroupId) {
-                const index = this.list.indexOf(v)
-                this.list.splice(index, 1, this.temp)
-                break
-              }
-            }
+            this.getList()
             this.dialogFormVisible = false
             this.$notify({
               title: '成功',
