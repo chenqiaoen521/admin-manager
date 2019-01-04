@@ -129,8 +129,6 @@ import * as Api from '@/api/log'
 import waves from '@/directive/waves' // 水波纹指令
 import { parseTime} from '@/utils'
 
-
-
 export default {
   name: 'ComplexTable',
   directives: {
@@ -389,8 +387,8 @@ export default {
     handleDownload() {
       this.downloadLoading = true
       import('@/vendor/Export2Excel').then(excel => {
-        const tHeader = ['编码', 'uri', '权限名称', '权限类型']
-        const filterVal = ['permissionCode', 'permissionUri', 'permissionName', 'columnId']
+        const tHeader = ['用户IP', '事件', '类型', '账号', '信息', '是否成功', '表述', '创建时间']
+        const filterVal = ['userIp', 'logEvent', 'logType', 'userCode', 'logMessage', 'logSucess', 'logDesc', 'logCreateTime']
         const data = this.formatJson(filterVal, this.list)
         excel.export_json_to_excel({
           header: tHeader,
@@ -402,20 +400,24 @@ export default {
     },
     formatJson(filterVal, jsonData) {
       return jsonData.map(v => filterVal.map(j => {
-        if (j === 'columnId') {
+        if (j === 'logType') {
           let data = v[j]
           switch (data) {
             case 1:
-              return '客户端功能权限'
+              return '增加'
             case 2:
-              return '客户端菜单权限'
-              
+               return '修改'
             case 3:
-              return '管理端功能权限'
-              
+               return '删除'
             case 4:
-              return '管理端菜单权限'
+               return '查询'
+            case 5:
+               return '异常'
           }
+        } else if (j === 'logSucess') {
+          return v[j] ? '成功' : '失败'
+        } else if (j === 'logCreateTime') {
+          return parseTime(v[j], '{y}-{m}-{d} {h}:{i}:{s}')
         } else {
           return v[j]
         }
