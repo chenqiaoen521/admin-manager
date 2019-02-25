@@ -15,15 +15,15 @@ module.exports = {
         changeOrigin: true
       },
       '/upmsManage': {
-        target: 'http://192.168.3.97:8086',
+        target: 'http://192.168.3.127:8086',
         changeOrigin: true
       },
       '/sso': {
-        target: 'http://192.168.3.97:8086',
+        target: 'http://192.168.3.127:8086',
         changeOrigin: true
       },
       '/systemManage': {
-        target: 'http://192.168.3.97:8086',
+        target: 'http://192.168.3.127:8086',
         changeOrigin: true
       }
     },

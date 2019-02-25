@@ -577,13 +577,7 @@ export default {
         if (valid) {
           const tempData = Object.assign({}, this.temp)
           userApi.updatePass(tempData).then(() => {
-            for (const v of this.datatable) {
-              if (v.id === this.temp.id) {
-                const index = this.datatable.indexOf(v)
-                this.datatable.splice(index, 1, this.temp)
-                break
-              }
-            }
+            this.getList()
             this.dialogFormVisible = false
             this.$notify({
               title: '成功',

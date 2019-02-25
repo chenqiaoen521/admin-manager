@@ -29,6 +29,11 @@
           <span>{{ scope.row.roleCode }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="角色等级" min-width="150px">
+        <template slot-scope="scope">
+          <span>{{ scope.row.roleGrade | grade }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="备注" min-width="150px">
         <template slot-scope="scope">
           <span>{{ scope.row.memo }}</span>
@@ -67,8 +72,18 @@
         <el-form-item label="角色编码" prop="roleCode">
           <el-input v-model="temp.roleCode"/>
         </el-form-item>
+        <el-form-item label="权限等级" prop="roleGrade">
+          <el-select v-model="temp.roleGrade" placeholder="请选择">
+            <el-option
+              v-for="item in roleGradeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="备    注" prop="roleCode">
-          <el-input v-model="temp.memo"/>
+          <el-input type="textarea" v-model="temp.memo"/>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -83,7 +98,11 @@
           <el-form style="margin-left: 20px;">
             <el-form-item >
               <el-checkbox-group v-model="auth.checkboxes">
-                <el-checkbox class="ebox-my"  v-for="item in temp3" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+                <el-checkbox :checked="checkflag" @change="checkall" class="ebox-my" >全选</el-checkbox>
+                <el-tooltip v-if="item.permissionName.length > 6" class="item" effect="dark" :content="item.permissionName" v-for="item in temp3" placement="top-start">
+                  <el-checkbox class="ebox-my" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+                </el-tooltip>
+                <el-checkbox v-else class="ebox-my" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
           </el-form>
@@ -91,14 +110,22 @@
         <el-tab-pane label="客户端菜单权限" name="2"><el-form style="margin-left: 20px;">
             <el-form-item >
               <el-checkbox-group v-model="auth.checkboxes">
-                <el-checkbox class="ebox-my"  v-for="item in temp3" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+                <el-checkbox :checked="checkflag" @change="checkall" class="ebox-my" >全选</el-checkbox>
+                <el-tooltip v-if="item.permissionName.length > 6" class="item" effect="dark" :content="item.permissionName" v-for="item in temp3" placement="top-start">
+                  <el-checkbox class="ebox-my" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+                </el-tooltip>
+                <el-checkbox v-else class="ebox-my" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
           </el-form></el-tab-pane>
         <el-tab-pane label="管理端功能权限" name="3"><el-form style="margin-left: 20px;">
             <el-form-item >
               <el-checkbox-group v-model="auth.checkboxes">
-                <el-checkbox class="ebox-my"  v-for="item in temp3" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+                <el-checkbox :checked="checkflag" @change="checkall" class="ebox-my" >全选</el-checkbox>
+                <el-tooltip v-if="item.permissionName.length > 6" class="item" effect="dark" :content="item.permissionName" v-for="item in temp3" placement="top-start">
+                  <el-checkbox class="ebox-my" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+                </el-tooltip>
+                <el-checkbox v-else class="ebox-my" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
           </el-form></el-tab-pane>
@@ -106,7 +133,11 @@
           <el-form style="margin-left: 20px;">
             <el-form-item >
               <el-checkbox-group v-model="auth.checkboxes">
-                <el-checkbox class="ebox-my"  v-for="item in temp3" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+                <el-checkbox :checked="checkflag" @change="checkall" class="ebox-my" >全选</el-checkbox>
+                <el-tooltip v-if="item.permissionName.length > 6" class="item" effect="dark" :content="item.permissionName" v-for="item in temp3" placement="top-start">
+                  <el-checkbox class="ebox-my" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
+                </el-tooltip>
+                <el-checkbox v-else class="ebox-my" :label="item.permissionId" :key="item.permissionId"  >{{item.permissionName}}</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
           </el-form>
@@ -146,6 +177,18 @@ export default {
     waves
   },
   filters: {
+    grade (val) {
+      switch (val) {
+        case 1:
+          return '超级管理员'
+        case 2:
+          return '普通管理员'
+        case 3:
+          return '普通用户'
+        case 4:
+          return '访客'
+      }
+    },
     statusFilter(status) {
       const statusMap = {
         published: 'success',
@@ -165,6 +208,7 @@ export default {
       list: null,
       total: null,
       temp3: [],
+      checkflag: false,
       auth: {
         checkboxes: [],
         roleId: -1,
@@ -176,11 +220,18 @@ export default {
         limit: 10,
         keyword: undefined
       },
+      roleGradeOptions: [
+        {label: '超级管理员', value: 1},
+        {label: '普通管理员', value: 2},
+        {label: '普通用户', value: 3},
+        {label: '访客', value: 4}
+      ],
       statusOptions: ['published', 'draft', 'deleted'],
       showReviewer: false,
       temp: {
         roleName: '',
-        roleCode: ''
+        roleCode: '',
+        roleGrade: 1
       },
       temp2: null,
       dialogFormVisible: false,
@@ -209,6 +260,7 @@ export default {
       if (newV === old) {
         return
       }
+      this.checkflag = false
       if (!newV) return
       this.temp3 = this.temp2.filter(item => {
         return item.columnId == newV
@@ -216,6 +268,21 @@ export default {
     }
   },
   methods: {
+    checkall (e) {
+      if (e) {
+        this.temp3.forEach(item => {
+          if (!this.auth.checkboxes.includes(item.permissionId)) {
+            this.auth.checkboxes.push(item.permissionId)
+          }
+        })
+      } else {
+        this.temp3.forEach(item => {
+          if (this.auth.checkboxes.includes(item.permissionId)) {
+            this.auth.checkboxes.splice(this.auth.checkboxes.indexOf(item.permissionId), 1)
+          }
+        })
+      }
+    },
     wocao (r) {
       return 'wocao_' + r
     },
@@ -236,7 +303,7 @@ export default {
         this.auth.roleId = data.roleId
         this.auth.prePerm = Object.assign({}, arr)
         this.dialogFormVisible2 = true
-        this.activeName = 1
+        this.activeName = '1'
       })
     },
     setAuth () {
@@ -378,6 +445,7 @@ export default {
       this.temp = {
         roleCode: '',
         roleName: '',
+        roleGrade: 1,
         memo: ''
       }
     },
@@ -406,7 +474,7 @@ export default {
       })
     },
     handleUpdate(row) {
-      this.temp = Object.assign({}, row)
+      this.temp = Object.assign({}, this.temp, row)
       this.dialogStatus = 'update'
       this.dialogFormVisible = true
       this.$nextTick(() => {

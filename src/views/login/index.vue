@@ -121,7 +121,7 @@ export default {
           this.loading = true
           this.$store.dispatch('LoginByUsername', this.loginForm).then((res) => {
             this.loading = false
-            if (res) {
+            if (res.data.success) {
               this.$message({
                 message: '登录成功',
                 type: 'success'
@@ -129,11 +129,15 @@ export default {
               this.$router.push({ path: this.redirect || '/' })
             } else {
               this.$message({
-                message: '用户名密码错误',
+                message: res.data.message,
                 type: 'error'
               })
             }
-          }).catch(() => {
+          }).catch((e) => {
+            this.$message({
+              message: '发生错误',
+              type: 'error'
+            })
             this.loading = false
           })
         } else {

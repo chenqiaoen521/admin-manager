@@ -20,8 +20,8 @@ export function timeAgo(time) {
 }
 
 export function parseStatus(val) {
-  if (val === 1) {
-    return '不锁定'
+  if (val === 0) {
+    return '未锁定'
   } else {
     return '锁定'
   }

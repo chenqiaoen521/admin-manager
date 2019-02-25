@@ -1,5 +1,6 @@
 import { loginByUsername, logout, getUserInfo } from '@/api/login'
 import { getToken, setToken, removeToken , getState, setState, removeState} from '@/utils/auth'
+import { MessageBox } from 'element-ui'
 
 const user = {
   state: {
@@ -54,7 +55,7 @@ const user = {
             setState(username, res.data.success)
             setToken(username)
           }
-          resolve(res.data.success)
+          resolve(res)
         }).catch(error => {
           reject(error)
         })
@@ -68,6 +69,13 @@ const user = {
     GetUserInfo({ commit , state, rootState, getters}) {
       return new Promise((resolve, reject) => {
         getUserInfo(state.name).then(res => {
+          if (!res.data.success) {
+            MessageBox({
+              message: res.data.message,
+              type: 'error'
+            })
+            return
+          }
           let {row} = res.data.data
           if (row && Array.isArray(row) && row.length > 0) { // 验证返回的roles是否是一个非空数组
             commit('SET_ROLES', row)

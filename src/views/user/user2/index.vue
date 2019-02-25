@@ -103,8 +103,8 @@
         <el-form-item label="电话号码" prop="phone">
           <el-input v-model="temp.phone"/>
         </el-form-item>
-        <el-form-item label="用户卡号" prop="idcard">
-          <el-input v-model="temp.idcard"/>
+        <el-form-item label="用户邮箱" prop="email">
+          <el-input v-model="temp.email"/>
         </el-form-item>
         <el-form-item label="是否锁定" prop="locked">
           <el-switch v-model="temp.locked"></el-switch>
@@ -240,7 +240,7 @@ export default {
         userName: '',
         password: '',
         relpassword: '',
-        idcard: '',
+        email: '',
         phone: '',
         userCode: '',
         locked: ''
@@ -254,6 +254,10 @@ export default {
       dialogPvVisible: false,
       pvData: [],
       rules: {
+        email: [
+          { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+          { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
+        ],
         userName: [
           { required: true, message: '用户名称是必填项', trigger: 'blur' }
         ],
